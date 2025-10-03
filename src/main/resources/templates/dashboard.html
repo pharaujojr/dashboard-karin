@@ -107,22 +107,19 @@
                 <i class="fas fa-trophy"></i> Destaques do Período
             </h2>
             <div class="max-grid">
-                                <div class="max-card maior-venda">
-                    <div class="max-icon">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <div class="max-content">
-                        <h4>Maior Venda</h4>
-                        <p class="max-value" id="maior-venda-valor">R$ 0,00</p>
-                        <span class="max-detail" id="maior-venda-vendedor">-</span>
-                    </div>
-                </div>
-
-                <div class="max-card top-vendedores">
+                <div class="max-card top-vendedores full-width">
                     <div class="max-content">
                         <h4><i class="fas fa-crown"></i> Ranking de Vendas</h4>
                         <div class="top-vendedores-chart">
                             <canvas id="topVendedoresChart"></canvas>
+                        </div>
+                        <!-- Maior Venda moved below the chart -->
+                        <div class="maior-venda-button" id="maior-venda-button">
+                            <div class="maior-venda-info">
+                                <span class="maior-venda-label">🏆 Maior Venda:</span>
+                                <span class="maior-venda-value" id="maior-venda-valor">R$ 0,00</span>
+                                <span class="maior-venda-details" id="maior-venda-vendedor">-</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -147,6 +144,6 @@
         </div>
     </div>
 
-    <script src="/js/dashboard.js"></script>
+    <script src="/js/dashboard.js?v=3"></script>
 </body>
 </html>

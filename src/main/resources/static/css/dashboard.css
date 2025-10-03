@@ -220,11 +220,11 @@ body {
 
 .max-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 2fr;
+    grid-template-columns: 1fr;
     gap: 25px;
 }
 
-.max-card.top-vendedores {
+.max-card.full-width {
     grid-column: span 1;
     padding: 20px;
 }
@@ -239,6 +239,50 @@ body {
 .top-vendedores-chart {
     height: 350px;
     position: relative;
+    margin-bottom: 15px;
+}
+
+/* New styles for the maior venda button */
+.maior-venda-button {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    border-radius: 12px;
+    padding: 12px 20px;
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    margin-top: 10px;
+}
+
+.maior-venda-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+}
+
+.maior-venda-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.maior-venda-label {
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.maior-venda-value {
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.maior-venda-details {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.85rem;
+    font-style: italic;
 }
 
 .hidden {

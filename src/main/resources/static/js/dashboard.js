@@ -293,9 +293,19 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
     // Atualizar seção MAX
     if (dados.maxResponse) {
         atualizarElemento('maior-venda-valor', formatarMoeda(dados.maxResponse.maiorVenda));
-        const vendedorTexto = dados.maxResponse.vendedorMaiorVenda ? 
-            `Vendedor: ${dados.maxResponse.vendedorMaiorVenda.toUpperCase()}` : '-';
-        atualizarElemento('maior-venda-vendedor', vendedorTexto);
+        
+        // Build the details text with vendor and client
+        let detailsText = '';
+        if (dados.maxResponse.vendedorMaiorVenda && dados.maxResponse.clienteMaiorVenda) {
+            detailsText = `${dados.maxResponse.vendedorMaiorVenda.toUpperCase()} • ${dados.maxResponse.clienteMaiorVenda.toUpperCase()}`;
+        } else if (dados.maxResponse.vendedorMaiorVenda) {
+            detailsText = `Vendedor: ${dados.maxResponse.vendedorMaiorVenda.toUpperCase()}`;
+        } else if (dados.maxResponse.clienteMaiorVenda) {
+            detailsText = `Cliente: ${dados.maxResponse.clienteMaiorVenda.toUpperCase()}`;
+        } else {
+            detailsText = '-';
+        }
+        atualizarElemento('maior-venda-vendedor', detailsText);
     }
 
     // Atualizar gráfico
@@ -425,28 +435,6 @@ function atualizarGraficoTopVendedores(topVendedores) {
 
     topVendedoresChart = new Chart(ctx, {
         type: 'bar',
-        plugins: [
-            {
-                id: 'valueLabels',
-                afterDatasetsDraw: function(chart) {
-                    const ctx = chart.ctx;
-                    ctx.save();
-                    const meta = chart.getDatasetMeta(0);
-                    ctx.font = 'bold 12px Arial';
-                    ctx.fillStyle = '#374151';
-                    ctx.textAlign = 'center';
-                    
-                    for (let i = 0; i < meta.data.length; i++) {
-                        const bar = meta.data[i];
-                        const value = chart.data.datasets[0].data[i] || 0;
-                        const label = formatarMoeda(value);
-                        // Position on top of the bar
-                        ctx.fillText(label, bar.x, bar.y - 10);
-                    }
-                    ctx.restore();
-                }
-            }
-        ],
         data: {
             labels: labels,
             datasets: [{
@@ -465,12 +453,36 @@ function atualizarGraficoTopVendedores(topVendedores) {
                 borderSkipped: false
             }]
         },
+        plugins: [
+            {
+                id: 'valueLabels',
+                afterDatasetsDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    const meta = chart.getDatasetMeta(0);
+                    ctx.font = 'bold 12px Arial';
+                    ctx.fillStyle = '#374151';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    
+                    for (let i = 0; i < meta.data.length; i++) {
+                        const bar = meta.data[i];
+                        const value = chart.data.datasets[0].data[i] || 0;
+                        const label = formatarMoeda(value);
+                        // Position at the end of the horizontal bar
+                        ctx.fillText(label, bar.x + 10, bar.y);
+                    }
+                    ctx.restore();
+                }
+            }
+        ],
         options: {
+            indexAxis: 'y', // This makes it horizontal - MOVED HERE
             responsive: true,
             maintainAspectRatio: false,
             layout: {
                 padding: {
-                    top: 30 // Extra space for value labels on top
+                    right: 80 // Extra space for value labels at the end of bars
                 }
             },
             plugins: {
@@ -485,7 +497,7 @@ function atualizarGraficoTopVendedores(topVendedores) {
                     borderWidth: 1,
                     callbacks: {
                         label: function(context) {
-                            const value = context.parsed.y;
+                            const value = context.parsed.x; // For horizontal bars
                             return 'Total: ' + formatarMoeda(value);
                         }
                     }
@@ -493,6 +505,13 @@ function atualizarGraficoTopVendedores(topVendedores) {
             },
             scales: {
                 x: {
+                    display: false, // Hide X-axis, values are shown at bar ends
+                    grid: {
+                        display: false
+                    },
+                    beginAtZero: true
+                },
+                y: {
                     grid: {
                         display: false
                     },
@@ -501,15 +520,10 @@ function atualizarGraficoTopVendedores(topVendedores) {
                         font: {
                             size: 12,
                             weight: '500'
-                        }
+                        },
+                        maxRotation: 0,
+                        padding: 10
                     }
-                },
-                y: {
-                    display: false, // Hide Y-axis, values are on top of bars
-                    grid: {
-                        display: false
-                    },
-                    beginAtZero: true
                 }
             }
         }
