@@ -427,6 +427,31 @@ function atualizarGraficoTopVendedores(topVendedores) {
         type: 'bar',
         // render bars horizontally
         indexAxis: 'y',
+        // plugin to draw value labels at end of bars
+        plugins: [
+            {
+                id: 'valueLabels',
+                afterDatasetsDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    const dataset = chart.data.datasets[0];
+                    const meta = chart.getDatasetMeta(0);
+                    ctx.font = '12px Arial';
+                    ctx.fillStyle = '#111827';
+                    ctx.textBaseline = 'middle';
+                    for (let i = 0; i < meta.data.length; i++) {
+                        const bar = meta.data[i];
+                        const value = dataset.data[i] || 0;
+                        const label = formatarMoedaSimples(value);
+                        // Position at end of the bar plus a small offset
+                        const x = bar.x + 8;
+                        const y = bar.y;
+                        ctx.fillText(label, x, y);
+                    }
+                    ctx.restore();
+                }
+            }
+        ],
         data: {
             labels: labels,
             datasets: [{
@@ -460,26 +485,19 @@ function atualizarGraficoTopVendedores(topVendedores) {
                     borderWidth: 1,
                     callbacks: {
                         label: function(context) {
-                            return 'Total: ' + formatarMoeda(context.parsed.y);
+                            // For horizontal bars the value is in parsed.x
+                            const value = (context.parsed && context.parsed.x != null) ? context.parsed.x : context.parsed;
+                            return 'Total: ' + formatarMoeda(value);
                         }
                     }
                 }
             },
             scales: {
                 x: {
-                    // value axis (amounts) when horizontal
+                    // hide x axis scale (we'll render values on the bars)
+                    display: false,
                     grid: {
-                        display: true,
-                        color: 'rgba(0, 0, 0, 0.1)'
-                    },
-                    ticks: {
-                        color: '#6b7280',
-                        font: {
-                            size: 10
-                        },
-                        callback: function(value) {
-                            return formatarMoedaSimples(value);
-                        }
+                        display: false
                     }
                 },
                 y: {
