@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build: .
+    container_name: dashboard_app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://192.168.0.162:8449/dbsolturi
+      SPRING_DATASOURCE_USERNAME: solturi
+      SPRING_DATASOURCE_PASSWORD: NuM0ea42Vj5mGPuqyv2N
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
