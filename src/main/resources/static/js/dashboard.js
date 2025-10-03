@@ -425,30 +425,23 @@ function atualizarGraficoTopVendedores(topVendedores) {
 
     topVendedoresChart = new Chart(ctx, {
         type: 'bar',
-        // render bars horizontally (left to right)
-        indexAxis: 'y',
-        // plugin to draw value labels at end of bars
         plugins: [
             {
                 id: 'valueLabels',
                 afterDatasetsDraw: function(chart) {
                     const ctx = chart.ctx;
                     ctx.save();
-                    const dataset = chart.data.datasets[0];
                     const meta = chart.getDatasetMeta(0);
-                    ctx.font = 'bold 14px Arial';
+                    ctx.font = 'bold 12px Arial';
                     ctx.fillStyle = '#374151';
-                    ctx.textBaseline = 'middle';
-                    ctx.textAlign = 'left';
+                    ctx.textAlign = 'center';
                     
                     for (let i = 0; i < meta.data.length; i++) {
                         const bar = meta.data[i];
-                        const value = dataset.data[i] || 0;
+                        const value = chart.data.datasets[0].data[i] || 0;
                         const label = formatarMoeda(value);
-                        // Position at end of the bar plus offset
-                        const x = bar.x + 10;
-                        const y = bar.y;
-                        ctx.fillText(label, x, y);
+                        // Position on top of the bar
+                        ctx.fillText(label, bar.x, bar.y - 10);
                     }
                     ctx.restore();
                 }
@@ -477,7 +470,7 @@ function atualizarGraficoTopVendedores(topVendedores) {
             maintainAspectRatio: false,
             layout: {
                 padding: {
-                    right: 80 // Extra space for value labels
+                    top: 30 // Extra space for value labels on top
                 }
             },
             plugins: {
@@ -492,8 +485,7 @@ function atualizarGraficoTopVendedores(topVendedores) {
                     borderWidth: 1,
                     callbacks: {
                         label: function(context) {
-                            // For horizontal bars the value is in parsed.x
-                            const value = (context.parsed && context.parsed.x != null) ? context.parsed.x : context.parsed;
+                            const value = context.parsed.y;
                             return 'Total: ' + formatarMoeda(value);
                         }
                     }
@@ -501,14 +493,6 @@ function atualizarGraficoTopVendedores(topVendedores) {
             },
             scales: {
                 x: {
-                    // hide x axis scale (values are shown at bar tips)
-                    display: false,
-                    grid: {
-                        display: false
-                    }
-                },
-                y: {
-                    // vendor names on the left
                     grid: {
                         display: false
                     },
@@ -517,10 +501,15 @@ function atualizarGraficoTopVendedores(topVendedores) {
                         font: {
                             size: 12,
                             weight: '500'
-                        },
-                        maxRotation: 0,
-                        padding: 10
+                        }
                     }
+                },
+                y: {
+                    display: false, // Hide Y-axis, values are on top of bars
+                    grid: {
+                        display: false
+                    },
+                    beginAtZero: true
                 }
             }
         }
