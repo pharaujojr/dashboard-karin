@@ -425,6 +425,8 @@ function atualizarGraficoTopVendedores(topVendedores) {
 
     topVendedoresChart = new Chart(ctx, {
         type: 'bar',
+        // render bars horizontally
+        indexAxis: 'y',
         data: {
             labels: labels,
             datasets: [{
@@ -465,18 +467,7 @@ function atualizarGraficoTopVendedores(topVendedores) {
             },
             scales: {
                 x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#6b7280',
-                        font: {
-                            size: 10
-                        },
-                        maxRotation: 45
-                    }
-                },
-                y: {
+                    // value axis (amounts) when horizontal
                     grid: {
                         display: true,
                         color: 'rgba(0, 0, 0, 0.1)'
@@ -489,6 +480,18 @@ function atualizarGraficoTopVendedores(topVendedores) {
                         callback: function(value) {
                             return formatarMoedaSimples(value);
                         }
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#6b7280',
+                        font: {
+                            size: 10
+                        },
+                        maxRotation: 0
                     }
                 }
             }
