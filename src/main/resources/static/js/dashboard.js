@@ -425,7 +425,7 @@ function atualizarGraficoTopVendedores(topVendedores) {
 
     topVendedoresChart = new Chart(ctx, {
         type: 'bar',
-        // render bars horizontally
+        // render bars horizontally (left to right)
         indexAxis: 'y',
         // plugin to draw value labels at end of bars
         plugins: [
@@ -436,15 +436,17 @@ function atualizarGraficoTopVendedores(topVendedores) {
                     ctx.save();
                     const dataset = chart.data.datasets[0];
                     const meta = chart.getDatasetMeta(0);
-                    ctx.font = '12px Arial';
-                    ctx.fillStyle = '#111827';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.fillStyle = '#374151';
                     ctx.textBaseline = 'middle';
+                    ctx.textAlign = 'left';
+                    
                     for (let i = 0; i < meta.data.length; i++) {
                         const bar = meta.data[i];
                         const value = dataset.data[i] || 0;
-                        const label = formatarMoedaSimples(value);
-                        // Position at end of the bar plus a small offset
-                        const x = bar.x + 8;
+                        const label = formatarMoeda(value);
+                        // Position at end of the bar plus offset
+                        const x = bar.x + 10;
                         const y = bar.y;
                         ctx.fillText(label, x, y);
                     }
@@ -473,6 +475,11 @@ function atualizarGraficoTopVendedores(topVendedores) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    right: 80 // Extra space for value labels
+                }
+            },
             plugins: {
                 legend: {
                     display: false
@@ -494,22 +501,25 @@ function atualizarGraficoTopVendedores(topVendedores) {
             },
             scales: {
                 x: {
-                    // hide x axis scale (we'll render values on the bars)
+                    // hide x axis scale (values are shown at bar tips)
                     display: false,
                     grid: {
                         display: false
                     }
                 },
                 y: {
+                    // vendor names on the left
                     grid: {
                         display: false
                     },
                     ticks: {
-                        color: '#6b7280',
+                        color: '#374151',
                         font: {
-                            size: 10
+                            size: 12,
+                            weight: '500'
                         },
-                        maxRotation: 0
+                        maxRotation: 0,
+                        padding: 10
                     }
                 }
             }
