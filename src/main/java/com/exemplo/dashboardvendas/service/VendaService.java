@@ -136,9 +136,16 @@ public class VendaService {
         List<Object[]> dadosRaw = vendaRepository.dadosGraficoVendasPorMes(filial, vendedor, dataInicio, dataFim);
         List<Map<String, Object>> dadosGrafico = new ArrayList<>();
 
-        for (Object[] dado : dadosRaw) {
+        logger.debug("obterDadosGraficoPorMes - Raw data from DB: {} entries", dadosRaw.size());
+        
+        for (int i = 0; i < dadosRaw.size(); i++) {
+            Object[] dado = dadosRaw.get(i);
             Map<String, Object> ponto = new HashMap<>();
             Object rawData = dado[0];
+            
+            logger.debug("Raw entry {}: rawData={} (type={}), valor={}", 
+                i, rawData, rawData != null ? rawData.getClass().getSimpleName() : "null", dado[1]);
+            
             String dataStr = "";
             // native query returns timestamp for DATE_TRUNC; normalize to YYYY-MM-DD of the month start
             if (rawData instanceof java.time.LocalDate) {
@@ -152,14 +159,15 @@ public class VendaService {
             } else if (rawData != null) {
                 dataStr = rawData.toString().split(" ")[0];
             }
+            
+            logger.debug("Processed entry {}: dataStr={}, valor={}", i, dataStr, dado[1]);
+            
             ponto.put("data", dataStr);
             ponto.put("valor", dado[1]);
             dadosGrafico.add(ponto);
         }
 
-        if (dadosGrafico.size() > 0) {
-            logger.debug("obterDadosGraficoPorMes sample[0]: {}", dadosGrafico.get(0));
-        }
+        logger.debug("obterDadosGraficoPorMes final result: {}", dadosGrafico);
 
         return dadosGrafico;
     }

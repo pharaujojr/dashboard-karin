@@ -588,18 +588,31 @@ function formatarDataGrafico(data, tipoPeriodo = 'dia') {
     }
     const dataObj = parseISODateToLocal(data);
     
+    // Debug: log each date processing
+    console.debug('formatarDataGrafico:', {
+        input: data,
+        tipoPeriodo: tipoPeriodo,
+        parsedDate: dataObj,
+        month: dataObj.getMonth() + 1, // 1-based month for clarity
+        year: dataObj.getFullYear()
+    });
+    
     if (tipoPeriodo === 'ano' || tipoPeriodo === 'trimestre') {
         // Para período anual e trimestral, mostrar apenas mês/ano
-        return dataObj.toLocaleDateString('pt-BR', {
+        const formatted = dataObj.toLocaleDateString('pt-BR', {
             month: 'short',
             year: 'numeric'
         });
+        console.debug('formatarDataGrafico result:', formatted);
+        return formatted;
     } else {
         // Para outros períodos, mostrar dia/mês
-        return dataObj.toLocaleDateString('pt-BR', {
+        const formatted = dataObj.toLocaleDateString('pt-BR', {
             day: '2-digit',
             month: '2-digit'
         });
+        console.debug('formatarDataGrafico result:', formatted);
+        return formatted;
     }
 }
 
