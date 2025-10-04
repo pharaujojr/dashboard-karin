@@ -188,8 +188,21 @@ public class VendaService {
                 dataStr = ((java.sql.Date) rawData).toLocalDate().toString();
             } else if (rawData instanceof java.sql.Timestamp) {
                 dataStr = ((java.sql.Timestamp) rawData).toLocalDateTime().toLocalDate().toString();
+            } else if (rawData instanceof java.time.OffsetDateTime) {
+                dataStr = ((java.time.OffsetDateTime) rawData).toLocalDate().toString();
+            } else if (rawData instanceof java.time.ZonedDateTime) {
+                dataStr = ((java.time.ZonedDateTime) rawData).toLocalDate().toString();
+            } else if (rawData instanceof java.time.Instant) {
+                dataStr = ((java.time.Instant) rawData).atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString();
             } else if (rawData != null) {
-                dataStr = rawData.toString().split(" ")[0];
+                // More robust string parsing for any date-like string
+                String rawStr = rawData.toString();
+                if (rawStr.contains("T")) {
+                    // Handle ISO format like "2025-09-01T00:00:00Z"
+                    dataStr = rawStr.split("T")[0];
+                } else {
+                    dataStr = rawStr.split(" ")[0];
+                }
             }
             
             logger.debug("Processed entry {}: dataStr={}, valor={}", i, dataStr, dado[1]);

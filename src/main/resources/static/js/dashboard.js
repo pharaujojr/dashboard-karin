@@ -581,10 +581,24 @@ function formatarDataGrafico(data, tipoPeriodo = 'dia') {
     // Parse backend dates (YYYY-MM-DD) as local dates to avoid timezone shift
     function parseISODateToLocal(dateStr) {
         if (!dateStr) return new Date();
+        
+        // Handle ISO format with timezone (e.g., "2025-09-01T00:00:00Z")
+        if (typeof dateStr === 'string' && dateStr.includes('T')) {
+            // Extract just the date part before 'T' to avoid timezone conversion
+            const datePart = dateStr.split('T')[0];
+            if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+                const parts = datePart.split('-').map(Number);
+                return new Date(parts[0], parts[1] - 1, parts[2]);
+            }
+        }
+        
+        // Handle simple YYYY-MM-DD format
         if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
             const parts = dateStr.split('-').map(Number);
             return new Date(parts[0], parts[1] - 1, parts[2]);
         }
+        
+        // fallback
         return new Date(dateStr);
     }
     const dataObj = parseISODateToLocal(data);
