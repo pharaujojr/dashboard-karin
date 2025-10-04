@@ -174,7 +174,7 @@ function definirPeriodoPredefinido(tipo) {
             const anoAtual = hoje.getFullYear();
             dataInicio = new Date(anoAtual, 0, 1); // Janeiro 1
             dataFim = new Date(anoAtual, 11, 31); // Dezembro 31
-            console.debug('Ano calculation - Current year:', anoAtual, 'Start:', dataInicio, 'End:', dataFim);
+            console.log('Ano calculation - Current year:', anoAtual, 'Start:', dataInicio, 'End:', dataFim);
             break;
 
         default:
@@ -191,7 +191,7 @@ function definirPeriodoPredefinido(tipo) {
     if (dataFimElement) dataFimElement.value = formatarDataInput(dataFim);
     // Debug: log datas calculadas para auxiliar rastreio
     // Debug: sempre registrar as datas (YYYY-MM-DD)
-    console.debug('definirPeriodoPredefinido -> tipo:', tipo, 'dataInicio:', formatarDataInput(dataInicio), 'dataFim:', formatarDataInput(dataFim));
+    console.log('definirPeriodoPredefinido -> tipo:', tipo, 'dataInicio:', formatarDataInput(dataInicio), 'dataFim:', formatarDataInput(dataFim));
     // Filtrar automaticamente
     setTimeout(filtrarDados, 100);
 }
@@ -330,21 +330,22 @@ function atualizarGrafico(dadosGrafico, tipoPeriodo = 'dia') {
     }
 
     // Debug: log raw data from backend
-    console.debug('Chart Data Debug:');
-    console.debug('- tipoPeriodo:', tipoPeriodo);
-    console.debug('- dadosGrafico raw:', dadosGrafico);
+    console.log('=== CHART DATA DEBUG ===');
+    console.log('- tipoPeriodo:', tipoPeriodo);
+    console.log('- dadosGrafico raw:', dadosGrafico);
     
     const labels = dadosGrafico.map(item => formatarDataGrafico(item.data, tipoPeriodo));
     const valores = dadosGrafico.map(item => parseFloat(item.valor) || 0);
     
     // Debug: log processed data
-    console.debug('- processed labels:', labels);
-    console.debug('- processed valores:', valores);
-    console.debug('- data/label pairs:', dadosGrafico.map(item => ({
+    console.log('- processed labels:', labels);
+    console.log('- processed valores:', valores);
+    console.log('- data/label pairs:', dadosGrafico.map(item => ({
         rawDate: item.data,
         processedLabel: formatarDataGrafico(item.data, tipoPeriodo),
         value: parseFloat(item.valor) || 0
     })));
+    console.log('========================');
 
     vendasChart = new Chart(ctx, {
         type: 'line',
@@ -589,7 +590,7 @@ function formatarDataGrafico(data, tipoPeriodo = 'dia') {
     const dataObj = parseISODateToLocal(data);
     
     // Debug: log each date processing
-    console.debug('formatarDataGrafico:', {
+    console.log('formatarDataGrafico:', {
         input: data,
         tipoPeriodo: tipoPeriodo,
         parsedDate: dataObj,
@@ -603,7 +604,7 @@ function formatarDataGrafico(data, tipoPeriodo = 'dia') {
             month: 'short',
             year: 'numeric'
         });
-        console.debug('formatarDataGrafico result:', formatted);
+        console.log('formatarDataGrafico result:', formatted);
         return formatted;
     } else {
         // Para outros períodos, mostrar dia/mês
@@ -611,7 +612,7 @@ function formatarDataGrafico(data, tipoPeriodo = 'dia') {
             day: '2-digit',
             month: '2-digit'
         });
-        console.debug('formatarDataGrafico result:', formatted);
+        console.log('formatarDataGrafico result:', formatted);
         return formatted;
     }
 }
