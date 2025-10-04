@@ -1,5 +1,6 @@
 // Variáveis globais
 let vendasChart;
+let vendasAcumuladasChart;
 let topVendedoresChart;
 const API_BASE_URL = '/api';
 
@@ -313,6 +314,9 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
     // Atualizar gráfico
     atualizarGrafico(dados.dadosGrafico || [], tipoPeriodo);
     
+    // Atualizar gráfico acumulado
+    atualizarGraficoAcumulado(dados.dadosGrafico || [], tipoPeriodo);
+    
     // Atualizar gráfico de top vendedores
     atualizarGraficoTopVendedores(dados.top10Vendedores || []);
 
@@ -348,24 +352,24 @@ function atualizarGrafico(dadosGrafico, tipoPeriodo = 'dia') {
     console.log('========================');
 
     vendasChart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: labels,
             datasets: [{
                 label: 'Vendas (R$)',
                 data: valores,
+                backgroundColor: 'rgba(30, 58, 138, 0.8)',
                 borderColor: '#1e3a8a',
-                backgroundColor: 'rgba(30, 58, 138, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#f97316',
-                pointBorderColor: '#f97316',
-                pointBorderWidth: 2,
-                pointRadius: 6,
-                pointHoverRadius: 8,
-                pointHoverBackgroundColor: '#ea580c',
-                pointHoverBorderColor: '#ea580c'
+                borderWidth: 2,
+                borderRadius: {
+                    topLeft: 6,
+                    topRight: 6,
+                    bottomLeft: 0,
+                    bottomRight: 0
+                },
+                borderSkipped: false,
+                hoverBackgroundColor: 'rgba(249, 115, 22, 0.9)',
+                hoverBorderColor: '#f97316'
             }]
         },
         options: {
@@ -428,11 +432,6 @@ function atualizarGrafico(dadosGrafico, tipoPeriodo = 'dia') {
             interaction: {
                 intersect: false,
                 mode: 'index'
-            },
-            elements: {
-                line: {
-                    tension: 0.4
-                }
             }
         }
     });
@@ -629,6 +628,116 @@ function formatarDataGrafico(data, tipoPeriodo = 'dia') {
         console.log('formatarDataGrafico result:', formatted);
         return formatted;
     }
+}
+
+// Atualizar gráfico de vendas acumuladas
+function atualizarGraficoAcumulado(dadosGrafico, tipoPeriodo) {
+    const ctx = document.getElementById('vendasAcumuladasChart').getContext('2d');
+
+    // Destruir gráfico anterior se existir
+    if (vendasAcumuladasChart) {
+        vendasAcumuladasChart.destroy();
+    }
+
+    // Calcular valores acumulados
+    let acumulado = 0;
+    const dadosAcumulados = dadosGrafico.map(item => {
+        acumulado += parseFloat(item.valor || 0);
+        return {
+            data: item.data,
+            total: acumulado
+        };
+    });
+
+    const labels = dadosAcumulados.map(item => formatarDataGrafico(item.data, tipoPeriodo));
+    const data = dadosAcumulados.map(item => item.total);
+
+    vendasAcumuladasChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Vendas Acumuladas',
+                data: data,
+                borderColor: '#f97316',
+                backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#f97316',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#f97316',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Acumulado: ' + formatarMoeda(context.parsed.y);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 0,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 11
+                        },
+                        callback: function(value) {
+                            return formatarMoeda(value);
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            elements: {
+                line: {
+                    tension: 0.4
+                }
+            }
+        }
+    });
 }
 
 function mostrarLoading(mostrar) {

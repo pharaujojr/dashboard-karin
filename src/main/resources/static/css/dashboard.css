@@ -379,6 +379,10 @@ body {
     max-height: 400px !important;
 }
 
+#vendasAcumuladasChart {
+    max-height: 400px !important;
+}
+
 /* Loading */
 .loading {
     position: fixed;
