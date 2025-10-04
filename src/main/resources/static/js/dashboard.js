@@ -329,8 +329,22 @@ function atualizarGrafico(dadosGrafico, tipoPeriodo = 'dia') {
         vendasChart.destroy();
     }
 
+    // Debug: log raw data from backend
+    console.debug('Chart Data Debug:');
+    console.debug('- tipoPeriodo:', tipoPeriodo);
+    console.debug('- dadosGrafico raw:', dadosGrafico);
+    
     const labels = dadosGrafico.map(item => formatarDataGrafico(item.data, tipoPeriodo));
     const valores = dadosGrafico.map(item => parseFloat(item.valor) || 0);
+    
+    // Debug: log processed data
+    console.debug('- processed labels:', labels);
+    console.debug('- processed valores:', valores);
+    console.debug('- data/label pairs:', dadosGrafico.map(item => ({
+        rawDate: item.data,
+        processedLabel: formatarDataGrafico(item.data, tipoPeriodo),
+        value: parseFloat(item.valor) || 0
+    })));
 
     vendasChart = new Chart(ctx, {
         type: 'line',
