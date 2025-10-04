@@ -170,9 +170,11 @@ function definirPeriodoPredefinido(tipo) {
             break;
 
         case 'ano':
-            // Primeiro dia do ano até o último dia do ano
-            dataInicio = new Date(hoje.getFullYear(), 0, 1);
-            dataFim = new Date(hoje.getFullYear(), 11, 31);
+            // Primeiro dia do ano até o último dia do ano (Janeiro 1 a Dezembro 31)
+            const anoAtual = hoje.getFullYear();
+            dataInicio = new Date(anoAtual, 0, 1); // Janeiro 1
+            dataFim = new Date(anoAtual, 11, 31); // Dezembro 31
+            console.debug('Ano calculation - Current year:', anoAtual, 'Start:', dataInicio, 'End:', dataFim);
             break;
 
         default:
