@@ -129,4 +129,15 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
                                            @Param("vendedor") String vendedor,
                                            @Param("dataInicio") LocalDate dataInicio,
                                            @Param("dataFim") LocalDate dataFim);
+    
+    // Debug query to check what months have sales data
+    @Query(value = "SELECT EXTRACT(YEAR FROM v.data_venda) as ano, " +
+           "EXTRACT(MONTH FROM v.data_venda) as mes, " +
+           "COUNT(*) as vendas, SUM(v.valor_venda) as total " +
+           "FROM vendas_nacional v WHERE " +
+           "v.data_venda BETWEEN :dataInicio AND :dataFim " +
+           "GROUP BY EXTRACT(YEAR FROM v.data_venda), EXTRACT(MONTH FROM v.data_venda) " +
+           "ORDER BY ano, mes", nativeQuery = true)
+    List<Object[]> debugMonthSummary(@Param("dataInicio") LocalDate dataInicio,
+                                   @Param("dataFim") LocalDate dataFim);
 }

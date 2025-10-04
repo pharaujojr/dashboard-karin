@@ -133,10 +133,42 @@ public class VendaService {
     
     private List<Map<String, Object>> obterDadosGraficoPorMes(String filial, String vendedor, 
                                                              LocalDate dataInicio, LocalDate dataFim) {
+        
+        // Log environment info
+        logger.debug("=== ENVIRONMENT DEBUG ===");
+        logger.debug("System timezone: {}", java.util.TimeZone.getDefault().getID());
+        logger.debug("JVM timezone: {}", java.time.ZoneId.systemDefault());
+        logger.debug("Data range: {} to {}", dataInicio, dataFim);
+        logger.debug("========================");
+        
         List<Object[]> dadosRaw = vendaRepository.dadosGraficoVendasPorMes(filial, vendedor, dataInicio, dataFim);
         List<Map<String, Object>> dadosGrafico = new ArrayList<>();
 
         logger.debug("obterDadosGraficoPorMes - Raw data from DB: {} entries", dadosRaw.size());
+        
+        // Also log a sample of actual sales data to compare between environments
+        try {
+            List<Object[]> sampleSales = vendaRepository.dadosGraficoVendasPorPeriodo(filial, vendedor, dataInicio, dataFim);
+            logger.debug("Sample daily sales data (first 5): ");
+            for (int i = 0; i < Math.min(5, sampleSales.size()); i++) {
+                Object[] sale = sampleSales.get(i);
+                logger.debug("  Daily sale {}: date={}, valor={}", i, sale[0], sale[1]);
+            }
+        } catch (Exception e) {
+            logger.warn("Could not fetch sample daily sales: {}", e.getMessage());
+        }
+        
+        // Debug: show what months actually have data
+        try {
+            List<Object[]> monthSummary = vendaRepository.debugMonthSummary(dataInicio, dataFim);
+            logger.debug("=== MONTH SUMMARY (Year/Month/Count/Total) ===");
+            for (Object[] month : monthSummary) {
+                logger.debug("  {}/{}: {} sales, total={}", month[0], month[1], month[2], month[3]);
+            }
+            logger.debug("==========================================");
+        } catch (Exception e) {
+            logger.warn("Could not fetch month summary: {}", e.getMessage());
+        }
         
         for (int i = 0; i < dadosRaw.size(); i++) {
             Object[] dado = dadosRaw.get(i);
