@@ -56,6 +56,16 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
                                      @Param("dataInicio") LocalDate dataInicio,
                                      @Param("dataFim") LocalDate dataFim);
     
+    // Número de vendas por filtros
+    @Query("SELECT COUNT(v) FROM Venda v WHERE " +
+           "(:filial IS NULL OR v.filial = :filial) AND " +
+           "(:vendedor IS NULL OR v.vendedor = :vendedor) AND " +
+           "v.dataVenda BETWEEN :dataInicio AND :dataFim")
+    Long contarVendasPorFiltros(@Param("filial") String filial,
+                               @Param("vendedor") String vendedor,
+                               @Param("dataInicio") LocalDate dataInicio,
+                               @Param("dataFim") LocalDate dataFim);
+    
     // Maior venda por filtros
     @Query("SELECT v FROM Venda v WHERE " +
            "(:filial IS NULL OR v.filial = :filial) AND " +

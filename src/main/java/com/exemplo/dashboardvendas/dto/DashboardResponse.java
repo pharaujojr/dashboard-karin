@@ -7,6 +7,7 @@ import java.util.Map;
 public class DashboardResponse {
     
     private BigDecimal totalVendas;
+    private Long numeroVendas;
     private BigDecimal ticketMedio;
     private MaxResponse maxResponse;
     private List<Map<String, Object>> dadosGrafico;
@@ -17,11 +18,12 @@ public class DashboardResponse {
     // Construtor
     public DashboardResponse() {}
     
-    public DashboardResponse(BigDecimal totalVendas, BigDecimal ticketMedio, 
+    public DashboardResponse(BigDecimal totalVendas, Long numeroVendas, BigDecimal ticketMedio, 
                            MaxResponse maxResponse, List<Map<String, Object>> dadosGrafico,
                            List<Map<String, Object>> top10Vendedores,
                            List<String> filiais, List<String> vendedores) {
         this.totalVendas = totalVendas;
+        this.numeroVendas = numeroVendas;
         this.ticketMedio = ticketMedio;
         this.maxResponse = maxResponse;
         this.dadosGrafico = dadosGrafico;
@@ -37,6 +39,14 @@ public class DashboardResponse {
     
     public void setTotalVendas(BigDecimal totalVendas) {
         this.totalVendas = totalVendas;
+    }
+    
+    public Long getNumeroVendas() {
+        return numeroVendas;
+    }
+    
+    public void setNumeroVendas(Long numeroVendas) {
+        this.numeroVendas = numeroVendas;
     }
     
     public BigDecimal getTicketMedio() {

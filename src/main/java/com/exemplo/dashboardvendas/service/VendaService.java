@@ -31,6 +31,9 @@ public class VendaService {
         // Calcular ticket médio
         BigDecimal ticketMedio = vendaRepository.ticketMedioPorFiltros(filial, vendedor, dataInicio, dataFim);
         
+        // Contar número de vendas
+        Long numeroVendas = vendaRepository.contarVendasPorFiltros(filial, vendedor, dataInicio, dataFim);
+        
         // Obter dados MAX
         DashboardResponse.MaxResponse maxResponse = obterDadosMax(filial, vendedor, dataInicio, dataFim);
         
@@ -49,11 +52,11 @@ public class VendaService {
     // Debug logs
     logger.debug("getDadosDashboard params filial={}, vendedor={}, dataInicio={}, dataFim={}, agruparPorMes={}",
         filial, vendedor, dataInicio, dataFim, agruparPorMes);
-    logger.debug("Totals -> totalVendas={}, ticketMedio={}, dadosGrafico.size={}, top10.size={}",
-        totalVendas, ticketMedio, dadosGrafico != null ? dadosGrafico.size() : 0,
+    logger.debug("Totals -> totalVendas={}, numeroVendas={}, ticketMedio={}, dadosGrafico.size={}, top10.size={}",
+        totalVendas, numeroVendas, ticketMedio, dadosGrafico != null ? dadosGrafico.size() : 0,
         top10Vendedores != null ? top10Vendedores.size() : 0);
         
-        return new DashboardResponse(totalVendas, ticketMedio, maxResponse, dadosGrafico, top10Vendedores, filiais, vendedores);
+        return new DashboardResponse(totalVendas, numeroVendas, ticketMedio, maxResponse, dadosGrafico, top10Vendedores, filiais, vendedores);
     }
     
     private DashboardResponse.MaxResponse obterDadosMax(String filial, String vendedor, 

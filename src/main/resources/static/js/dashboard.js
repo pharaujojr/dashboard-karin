@@ -291,6 +291,7 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
 
     // Atualizar métricas principais
     atualizarElemento('total-vendas', formatarMoeda(dados.totalVendas));
+    atualizarElemento('numero-vendas', dados.numeroVendas || '0');
     atualizarElemento('ticket-medio', formatarMoeda(dados.ticketMedio));
 
     // Atualizar seção MAX
