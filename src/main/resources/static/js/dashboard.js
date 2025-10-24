@@ -2,14 +2,34 @@
 let vendasChart;
 let vendasAcumuladasChart;
 let topVendedoresChart;
+let autoRefreshInterval;
 const API_BASE_URL = '/api';
+const REFRESH_INTERVAL = 15000; // 15 segundos em milissegundos
 
 // Inicialização da página
 document.addEventListener('DOMContentLoaded', function() {
     carregarFiltros();
     carregarDadosIniciais();
     configurarEventos();
+    configurarVisibilityChange();
 });
+
+// Configurar mudança de visibilidade da página
+function configurarVisibilityChange() {
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            // Página não está visível, pausar auto-refresh
+            console.log('Página oculta: pausando auto-refresh');
+        } else {
+            // Página voltou a ficar visível, retomar auto-refresh se estava ativo
+            if (autoRefreshInterval) {
+                console.log('Página visível: retomando auto-refresh');
+                // Atualizar imediatamente ao voltar
+                filtrarDados();
+            }
+        }
+    });
+}
 
 // Configurar eventos
 function configurarEventos() {
@@ -211,6 +231,17 @@ function carregarDadosIniciais() {
 
 // Filtrar dados
 async function filtrarDados() {
+    // Adicionar classe de carregamento no indicador
+    const refreshIndicator = document.querySelector('.auto-refresh-indicator');
+    const refreshStatus = document.getElementById('refresh-status');
+    
+    if (refreshIndicator) {
+        refreshIndicator.classList.add('refreshing');
+    }
+    if (refreshStatus) {
+        refreshStatus.textContent = 'Atualizando...';
+    }
+    
     // Função auxiliar para obter valor de elemento com verificação
     function obterValor(id) {
         const elemento = document.getElementById(id);
@@ -271,11 +302,52 @@ async function filtrarDados() {
         const dados = await response.json();
         atualizarDashboard(dados, tipoPeriodo);
         
+        // Iniciar auto-refresh após carregar dados com sucesso
+        iniciarAutoRefresh();
+        
     } catch (error) {
         console.error('Erro ao filtrar dados:', error);
         mostrarNotificacao('Erro ao carregar dados do dashboard', 'error');
     } finally {
         mostrarLoading(false);
+        
+        // Remover animação do indicador
+        const refreshIndicator = document.querySelector('.auto-refresh-indicator');
+        const refreshStatus = document.getElementById('refresh-status');
+        
+        if (refreshIndicator) {
+            refreshIndicator.classList.remove('refreshing');
+        }
+        if (refreshStatus) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            refreshStatus.textContent = `Última atualização: ${timeStr}`;
+        }
+    }
+}
+
+// Iniciar auto-refresh dos dados
+function iniciarAutoRefresh() {
+    // Limpar intervalo anterior se existir
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    // Configurar novo intervalo
+    autoRefreshInterval = setInterval(() => {
+        console.log('Auto-refresh: atualizando dados do dashboard...');
+        filtrarDados();
+    }, REFRESH_INTERVAL);
+    
+    console.log(`Auto-refresh iniciado: ${REFRESH_INTERVAL / 1000} segundos`);
+}
+
+// Parar auto-refresh dos dados
+function pararAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        console.log('Auto-refresh parado');
     }
 }
 
