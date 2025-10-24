@@ -16,9 +16,67 @@ let ultimosDados = null; // Armazenar últimos dados recebidos
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
+    detectarModoTV();
     carregarFiltros();
     configurarEventos();
+    verificarParametrosURL();
 });
+
+// Helper para obter tamanho de fonte baseado no modo TV
+function getFontSize(normalSize) {
+    const isTVMode = document.body.classList.contains('tv-mode');
+    return isTVMode ? normalSize * 1.3 : normalSize; // 30% maior em modo TV
+}
+
+// Detectar modo TV
+function detectarModoTV() {
+    const larguraTela = window.innerWidth;
+    const alturaTela = window.innerHeight;
+    
+    // Detectar se é TV (tela grande >= 1920px de largura)
+    const isTVSize = larguraTela >= 1920;
+    
+    // Detectar user agent de TV (opcional, para Smart TVs)
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isTVAgent = /tv|smarttv|googletv|appletv|hbbtv|pov_tv|netcast|webos/.test(userAgent);
+    
+    // Ativar modo TV se tela grande OU user agent de TV
+    if (isTVSize || isTVAgent) {
+        document.body.classList.add('tv-mode');
+        console.log('Modo TV ativado:', {largura: larguraTela, altura: alturaTela, isTV: isTVAgent});
+    }
+}
+
+// Verificar parâmetros da URL
+function verificarParametrosURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Permitir forçar modo TV via URL: ?tv=true
+    if (urlParams.get('tv') === 'true') {
+        document.body.classList.add('tv-mode');
+        
+        // Auto-iniciar placar com configuração padrão se em modo TV
+        autoIniciarPlacarTV();
+    }
+    
+    // Permitir desativar modo TV: ?tv=false
+    if (urlParams.get('tv') === 'false') {
+        document.body.classList.remove('tv-mode');
+    }
+}
+
+// Auto-iniciar placar em modo TV
+function autoIniciarPlacarTV() {
+    // Aguardar 1 segundo para carregar filtros
+    setTimeout(() => {
+        // Configuração padrão para TV
+        document.getElementById('tipo-periodo').value = 'mes';
+        document.getElementById('meta-vendas').value = '1000000';
+        
+        // Iniciar placar automaticamente
+        iniciarPlacar();
+    }, 1000);
+}
 
 // Carregar opções de filtros
 async function carregarFiltros() {
@@ -346,7 +404,7 @@ function atualizarGauge(valorAtual) {
     ctx.strokeStyle = '#1f2937';
     ctx.fillStyle = '#1f2937';
     ctx.lineWidth = 3;
-    ctx.font = 'bold 14px sans-serif';
+    ctx.font = `bold ${getFontSize(14)}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -455,7 +513,7 @@ function atualizarTopVendedores(vendedores) {
                         
                         // Valor em preto
                         ctx.fillStyle = '#374151';
-                        ctx.font = 'bold 11px Arial';
+                        ctx.font = `bold ${getFontSize(11)}px Arial`;
                         ctx.fillText(label, bar.x + 10, bar.y);
                         
                         // Adicionar indicador de comparação se houver variação
@@ -468,7 +526,7 @@ function atualizarTopVendedores(vendedores) {
                             const labelWidth = ctx.measureText(label).width;
                             
                             ctx.fillStyle = color;
-                            ctx.font = 'bold 10px Arial';
+                            ctx.font = `bold ${getFontSize(10)}px Arial`;
                             ctx.fillText(arrow + ' ' + variacaoText, bar.x + 15 + labelWidth, bar.y);
                         }
                     }
@@ -519,6 +577,11 @@ function atualizarTopVendedores(vendedores) {
                 y: {
                     grid: {
                         display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: getFontSize(12)
+                        }
                     }
                 }
             }
@@ -573,6 +636,9 @@ function atualizarGraficos(dadosGrafico) {
                         label: function(context) {
                             return 'R$ ' + context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         }
+                    },
+                    bodyFont: {
+                        size: getFontSize(12)
                     }
                 }
             },
@@ -582,6 +648,16 @@ function atualizarGraficos(dadosGrafico) {
                     ticks: {
                         callback: function(value) {
                             return 'R$ ' + value.toLocaleString('pt-BR');
+                        },
+                        font: {
+                            size: getFontSize(11)
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: getFontSize(11)
                         }
                     }
                 }
@@ -620,6 +696,9 @@ function atualizarGraficos(dadosGrafico) {
                         label: function(context) {
                             return 'R$ ' + context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         }
+                    },
+                    bodyFont: {
+                        size: getFontSize(12)
                     }
                 }
             },
@@ -629,6 +708,16 @@ function atualizarGraficos(dadosGrafico) {
                     ticks: {
                         callback: function(value) {
                             return 'R$ ' + value.toLocaleString('pt-BR');
+                        },
+                        font: {
+                            size: getFontSize(11)
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: getFontSize(11)
                         }
                     }
                 }
