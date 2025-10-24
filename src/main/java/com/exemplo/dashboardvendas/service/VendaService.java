@@ -43,7 +43,7 @@ public class VendaService {
             obterDadosGrafico(filial, vendedor, dataInicio, dataFim);
         
         // Obter top 10 vendedores
-        List<Map<String, Object>> top10Vendedores = obterTop10Vendedores(filial, dataInicio, dataFim, tipoPeriodo);
+        List<Map<String, Object>> top10Vendedores = obterTop10Vendedores(filial, dataInicio, dataFim);
         
         // Obter listas para filtros
         List<String> filiais = vendaRepository.findDistinctFiliais();
@@ -345,76 +345,14 @@ public class VendaService {
         return dadosGrafico;
     }
     
-    private List<Map<String, Object>> obterTop10Vendedores(String filial, LocalDate dataInicio, LocalDate dataFim, String tipoPeriodo) {
+    private List<Map<String, Object>> obterTop10Vendedores(String filial, LocalDate dataInicio, LocalDate dataFim) {
         List<Object[]> dadosRaw = vendaRepository.top10Vendedores(filial, dataInicio, dataFim);
         List<Map<String, Object>> top10 = new ArrayList<>();
         
-        // Calcular período anterior para comparação
-        LocalDate dataInicioAnterior = null;
-        LocalDate dataFimAnterior = null;
-        
-        if (tipoPeriodo != null && !tipoPeriodo.equals("personalizado")) {
-            LocalDate hoje = LocalDate.now();
-            
-            switch (tipoPeriodo) {
-                case "mes":
-                    if (dataFim.equals(dataFim.withDayOfMonth(dataFim.lengthOfMonth())) && hoje.getMonth() == dataFim.getMonth()) {
-                        dataInicioAnterior = dataInicio.minusMonths(1);
-                        dataFimAnterior = dataInicio.minusMonths(1).withDayOfMonth(hoje.getDayOfMonth());
-                    } else {
-                        dataInicioAnterior = dataInicio.minusMonths(1);
-                        dataFimAnterior = dataFim.minusMonths(1);
-                    }
-                    break;
-                case "ano":
-                    if (dataFim.equals(dataFim.withDayOfYear(dataFim.lengthOfYear())) && hoje.getYear() == dataFim.getYear()) {
-                        dataInicioAnterior = dataInicio.minusYears(1);
-                        dataFimAnterior = dataInicio.minusYears(1).withDayOfYear(hoje.getDayOfYear());
-                    } else {
-                        dataInicioAnterior = dataInicio.minusYears(1);
-                        dataFimAnterior = dataFim.minusYears(1);
-                    }
-                    break;
-                case "semana":
-                    if (dataFim.getDayOfWeek() == java.time.DayOfWeek.SUNDAY && !dataFim.isBefore(hoje)) {
-                        dataInicioAnterior = dataInicio.minusWeeks(1);
-                        dataFimAnterior = dataInicio.minusWeeks(1).plusDays(java.time.temporal.ChronoUnit.DAYS.between(dataInicio, hoje));
-                    } else {
-                        dataInicioAnterior = dataInicio.minusWeeks(1);
-                        dataFimAnterior = dataFim.minusWeeks(1);
-                    }
-                    break;
-                case "trimestre":
-                    dataInicioAnterior = dataInicio.minusMonths(3);
-                    dataFimAnterior = dataFim.minusMonths(3);
-                    break;
-                default:
-                    long dias = java.time.temporal.ChronoUnit.DAYS.between(dataInicio, dataFim);
-                    dataInicioAnterior = dataInicio.minusDays(dias + 1);
-                    dataFimAnterior = dataInicio.minusDays(1);
-            }
-        }
-        
         for (Object[] dado : dadosRaw) {
             Map<String, Object> vendedor = new HashMap<>();
-            String nomeVendedor = dado[0].toString();
-            BigDecimal totalAtual = (BigDecimal) dado[1];
-            
-            vendedor.put("nome", nomeVendedor);
-            vendedor.put("total", totalAtual);
-            
-            // Calcular comparação com período anterior
-            if (dataInicioAnterior != null && dataFimAnterior != null) {
-                BigDecimal totalAnterior = vendaRepository.totalVendasPorVendedor(
-                    nomeVendedor, filial, dataInicioAnterior, dataFimAnterior
-                );
-                
-                if (totalAnterior != null && totalAnterior.compareTo(BigDecimal.ZERO) > 0) {
-                    double variacao = ((totalAtual.doubleValue() - totalAnterior.doubleValue()) / totalAnterior.doubleValue()) * 100;
-                    vendedor.put("variacao", variacao);
-                }
-            }
-            
+            vendedor.put("nome", dado[0].toString());
+            vendedor.put("total", dado[1]);
             top10.add(vendedor);
         }
         

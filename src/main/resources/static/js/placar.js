@@ -12,6 +12,7 @@ let topVendedoresChart = null;
 let gaugeChart = null;
 let chartAcumulado = null;
 let chartDiario = null;
+let ultimosDados = null; // Armazenar últimos dados recebidos
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
@@ -62,7 +63,25 @@ function configurarEventos() {
     });
     
     document.getElementById('btn-iniciar').addEventListener('click', iniciarPlacar);
-    document.getElementById('btn-reconfigurar').addEventListener('click', reconfigurar);
+    document.getElementById('btn-reconfigurar-dropdown').addEventListener('click', reconfigurar);
+    
+    // Dropdown menu
+    const btnMenu = document.getElementById('btn-menu');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+    
+    btnMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.toggle('hidden');
+    });
+    
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (!dropdownMenu.classList.contains('hidden') && 
+            !dropdownMenu.contains(e.target) && 
+            e.target !== btnMenu) {
+            dropdownMenu.classList.add('hidden');
+        }
+    });
 }
 
 // Calcular datas baseadas no período
@@ -239,70 +258,155 @@ async function carregarDadosPlacar() {
 
 // Atualizar placar
 function atualizarPlacar(dados) {
-    // Atualizar métricas
+    // Verificar se os dados mudaram
+    const dadosMudaram = !ultimosDados || JSON.stringify(ultimosDados) !== JSON.stringify(dados);
+    
+    // Atualizar métricas (sempre atualiza textos, é rápido)
     document.getElementById('total-vendas').textContent = formatarMoeda(dados.totalVendas);
     document.getElementById('numero-vendas').textContent = dados.numeroVendas || '0';
     document.getElementById('ticket-medio').textContent = formatarMoeda(dados.ticketMedio);
     
     // Atualizar comparações
-    if (dados.comparison) {
-        atualizarComparacao('comparacao-total', dados.comparison.totalVendasVariacao);
-        atualizarComparacao('comparacao-numero', dados.comparison.numeroVendasVariacao);
-        atualizarComparacao('comparacao-ticket', dados.comparison.ticketMedioVariacao);
+    if (dados.comparacao) {
+        atualizarComparacao('comparacao-total', dados.comparacao.totalVendasVariacao);
+        atualizarComparacao('comparacao-numero', dados.comparacao.numeroVendasVariacao);
+        atualizarComparacao('comparacao-ticket', dados.comparacao.ticketMedioVariacao);
     }
     
-    // Atualizar gauge
-    atualizarGauge(dados.totalVendas);
-    
-    // Atualizar top 10 vendedores
-    atualizarTopVendedores(dados.top10Vendedores || []);
-    
-    // Atualizar gráficos
-    atualizarGraficos(dados.dadosGrafico || []);
+    // Apenas redesenhar gráficos se os dados mudaram
+    if (dadosMudaram) {
+        // Atualizar gauge
+        atualizarGauge(dados.totalVendas);
+        
+        // Atualizar top 10 vendedores
+        atualizarTopVendedores(dados.top10Vendedores || []);
+        
+        // Atualizar gráficos
+        atualizarGraficos(dados.dadosGrafico || []);
+        
+        // Armazenar dados atuais
+        ultimosDados = JSON.parse(JSON.stringify(dados));
+    }
 }
 
 // Atualizar gauge
 function atualizarGauge(valorAtual) {
-    const percentual = Math.min((valorAtual / placarConfig.meta) * 100, 100);
+    const percentual = (valorAtual / placarConfig.meta) * 100;
+    const percentualLimitado = Math.min(percentual, 110);
     
-    document.getElementById('gauge-realizado').textContent = formatarMoeda(valorAtual);
     document.getElementById('gauge-meta').textContent = formatarMoeda(placarConfig.meta);
-    document.getElementById('gauge-percentual').textContent = `${percentual.toFixed(1)}%`;
     
-    const ctx = document.getElementById('gaugeChart').getContext('2d');
+    const canvas = document.getElementById('gaugeChart');
+    const ctx = canvas.getContext('2d');
     
-    if (gaugeChart) {
-        gaugeChart.destroy();
+    // Desenhar gauge manualmente
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height * 0.75; // Centro mais embaixo
+    const radius = Math.min(width, height) * 0.35;
+    const startAngle = Math.PI * 0.75; // 135 graus (começa embaixo à esquerda)
+    const endAngle = Math.PI * 2.25; // 405 graus (termina embaixo à direita)
+    const totalAngle = endAngle - startAngle;
+    
+    // Limpar canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Desenhar arco colorido de fundo (0% a 110%)
+    const segments = 110; // Um segmento por porcentagem
+    for (let i = 0; i < segments; i++) {
+        const segmentPercent = i;
+        const angle = startAngle + (totalAngle * (segmentPercent / 110));
+        const nextAngle = startAngle + (totalAngle * ((segmentPercent + 1) / 110));
+        
+        // Calcular cor baseada na porcentagem
+        let color;
+        if (segmentPercent < 20) {
+            color = '#dc2626'; // Vermelho escuro
+        } else if (segmentPercent < 40) {
+            color = '#ef4444'; // Vermelho
+        } else if (segmentPercent < 60) {
+            color = '#f59e0b'; // Laranja
+        } else if (segmentPercent < 80) {
+            color = '#fbbf24'; // Amarelo
+        } else if (segmentPercent < 100) {
+            color = '#84cc16'; // Verde-limão
+        } else {
+            color = '#10b981'; // Verde
+        }
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 25;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, angle, nextAngle);
+        ctx.stroke();
     }
     
-    gaugeChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [percentual, 100 - percentual],
-                backgroundColor: [
-                    percentual >= 100 ? '#10b981' : percentual >= 75 ? '#667eea' : percentual >= 50 ? '#f59e0b' : '#ef4444',
-                    '#e5e7eb'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            circumference: 180,
-            rotation: -90,
-            cutout: '75%',
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    enabled: false
-                }
-            }
-        }
-    });
+    // Desenhar marcações a cada 20%
+    ctx.strokeStyle = '#1f2937';
+    ctx.fillStyle = '#1f2937';
+    ctx.lineWidth = 3;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    for (let i = 0; i <= 100; i += 20) {
+        const angle = startAngle + (totalAngle * (i / 110));
+        
+        // Linha de marcação
+        const innerX = centerX + Math.cos(angle) * (radius - 18);
+        const innerY = centerY + Math.sin(angle) * (radius - 18);
+        const outerX = centerX + Math.cos(angle) * (radius + 5);
+        const outerY = centerY + Math.sin(angle) * (radius + 5);
+        
+        ctx.beginPath();
+        ctx.moveTo(innerX, innerY);
+        ctx.lineTo(outerX, outerY);
+        ctx.stroke();
+        
+        // Texto da porcentagem
+        const textX = centerX + Math.cos(angle) * (radius + 20);
+        const textY = centerY + Math.sin(angle) * (radius + 20);
+        ctx.fillText(i + '%', textX, textY);
+    }
+    
+    // Desenhar ponteiro preto
+    const needleAngle = startAngle + (totalAngle * (percentualLimitado / 110));
+    const needleLength = radius - 5;
+    const needleWidth = 10;
+    
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(needleAngle);
+    
+    // Triângulo do ponteiro
+    ctx.fillStyle = '#000000';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(needleLength, 0); // Ponta
+    ctx.lineTo(-10, -needleWidth / 2); // Base esquerda
+    ctx.lineTo(-10, needleWidth / 2); // Base direita
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.restore();
+    
+    // Círculo central preto
+    ctx.fillStyle = '#000000';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 15, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Círculo interno branco
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI);
+    ctx.fill();
 }
 
 // Atualizar top vendedores
@@ -329,9 +433,7 @@ function atualizarTopVendedores(vendedores) {
                 backgroundColor: 'rgba(102, 126, 234, 0.8)',
                 borderColor: 'rgba(102, 126, 234, 1)',
                 borderWidth: 2,
-                borderRadius: 8,
-                // Armazenar variações para uso no datalabels
-                variacao: vendedores.map(v => v.variacao)
+                borderRadius: 8
             }]
         },
         options: {
@@ -341,7 +443,7 @@ function atualizarTopVendedores(vendedores) {
             layout: {
                 padding: {
                     left: 10,
-                    right: 120,
+                    right: 100,
                     top: 10,
                     bottom: 10
                 }
@@ -353,37 +455,17 @@ function atualizarTopVendedores(vendedores) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            let label = 'R$ ' + context.parsed.x.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            const variacao = vendedores[context.dataIndex].variacao;
-                            if (variacao !== undefined && variacao !== null) {
-                                const sinal = variacao > 0 ? '+' : '';
-                                label += ` (${sinal}${variacao.toFixed(1)}%)`;
-                            }
-                            return label;
+                            return 'R$ ' + context.parsed.x.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         }
                     }
                 },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
-                    formatter: function(value, context) {
-                        const variacao = vendedores[context.dataIndex].variacao;
-                        let texto = 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        
-                        if (variacao !== undefined && variacao !== null) {
-                            const seta = variacao > 0 ? '↑' : '↓';
-                            texto += `  ${seta} ${Math.abs(variacao).toFixed(1)}%`;
-                        }
-                        
-                        return texto;
+                    formatter: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     },
-                    color: function(context) {
-                        const variacao = vendedores[context.dataIndex].variacao;
-                        if (variacao === undefined || variacao === null) {
-                            return '#374151';
-                        }
-                        return variacao > 0 ? '#10b981' : '#ef4444';
-                    },
+                    color: '#374151',
                     font: {
                         weight: 'bold',
                         size: 11
@@ -625,6 +707,7 @@ function reconfigurar() {
         // Resetar configuração
         placarConfig = null;
         currentChartIndex = 0;
+        ultimosDados = null; // Resetar cache de dados
         
         // Voltar para config
         document.getElementById('placar-panel').classList.add('hidden');

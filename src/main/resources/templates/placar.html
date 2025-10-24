@@ -11,16 +11,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header com navegação -->
-        <header class="header">
-            <div class="header-content">
-                <h1><i class="fas fa-trophy"></i> Placar de Vendas</h1>
-                <nav class="nav-links">
-                    <a href="/" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard Principal</a>
-                </nav>
-            </div>
-        </header>
-
         <!-- Configuração Inicial -->
         <div id="config-panel" class="config-panel">
             <div class="config-card">
@@ -84,7 +74,7 @@
         <div id="placar-panel" class="placar-panel hidden">
             <div class="placar-header">
                 <div class="placar-info">
-                    <h2>Placar Ativo</h2>
+                    <h2><i class="fas fa-trophy"></i> Placar de Vendas</h2>
                     <p id="placar-config-info"></p>
                 </div>
                 <div class="placar-actions">
@@ -92,9 +82,19 @@
                         <i class="fas fa-sync-alt"></i>
                         <span id="ultimo-refresh">Carregando...</span>
                     </div>
-                    <button id="btn-reconfigurar" class="btn-secondary">
-                        <i class="fas fa-cog"></i> Reconfigurar
-                    </button>
+                    <div class="dropdown-menu-container">
+                        <button id="btn-menu" class="btn-menu">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div id="dropdown-menu" class="dropdown-menu hidden">
+                            <a href="/" class="dropdown-item">
+                                <i class="fas fa-chart-line"></i> Dashboard Principal
+                            </a>
+                            <button id="btn-reconfigurar-dropdown" class="dropdown-item">
+                                <i class="fas fa-cog"></i> Reconfigurar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -107,20 +107,12 @@
 
                 <div class="gauge-container">
                     <h3><i class="fas fa-bullseye"></i> Meta de Vendas</h3>
-                    <canvas id="gaugeChart"></canvas>
-                    <div class="gauge-info">
-                        <div class="gauge-value">
-                            <span class="gauge-label">Realizado:</span>
-                            <span id="gauge-realizado" class="gauge-number">R$ 0,00</span>
-                        </div>
-                        <div class="gauge-value">
-                            <span class="gauge-label">Meta:</span>
-                            <span id="gauge-meta" class="gauge-number">R$ 0,00</span>
-                        </div>
-                        <div class="gauge-value">
-                            <span class="gauge-label">Atingido:</span>
-                            <span id="gauge-percentual" class="gauge-number">0%</span>
-                        </div>
+                    <div class="gauge-wrapper">
+                        <canvas id="gaugeChart" width="400" height="300"></canvas>
+                    </div>
+                    <div class="gauge-meta-info">
+                        <span class="gauge-label">Meta:</span>
+                        <span id="gauge-meta" class="gauge-number">R$ 0,00</span>
                     </div>
                 </div>
             </div>
@@ -172,14 +164,6 @@
                                 <span>0%</span>
                             </span>
                         </div>
-                    </div>
-                </div>
-                    <div class="metric-icon average">
-                        <i class="fas fa-receipt"></i>
-                    </div>
-                    <div class="metric-content">
-                        <div class="metric-label">Ticket Médio</div>
-                        <div class="metric-value" id="ticket-medio">R$ 0,00</div>
                     </div>
                 </div>
             </div>
