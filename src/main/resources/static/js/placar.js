@@ -224,6 +224,9 @@ async function carregarDadosPlacar() {
             params.append('agruparPorMes', 'true');
         }
         
+        // Adicionar tipoPeriodo para obter comparações
+        params.append('tipoPeriodo', placarConfig.tipoPeriodo);
+        
         const response = await fetch(`${API_BASE_URL}/dashboard?${params}`);
         const dados = await response.json();
         
@@ -240,6 +243,13 @@ function atualizarPlacar(dados) {
     document.getElementById('total-vendas').textContent = formatarMoeda(dados.totalVendas);
     document.getElementById('numero-vendas').textContent = dados.numeroVendas || '0';
     document.getElementById('ticket-medio').textContent = formatarMoeda(dados.ticketMedio);
+    
+    // Atualizar comparações
+    if (dados.comparacao) {
+        atualizarComparacao('comparacao-total', dados.comparacao.totalVendasVariacao);
+        atualizarComparacao('comparacao-numero', dados.comparacao.numeroVendasVariacao);
+        atualizarComparacao('comparacao-ticket', dados.comparacao.ticketMedioVariacao);
+    }
     
     // Atualizar gauge
     atualizarGauge(dados.totalVendas);
@@ -601,6 +611,37 @@ function reconfigurar() {
         // Limpar form
         document.getElementById('meta-vendas').value = '';
     }
+}
+
+// Atualizar comparação
+function atualizarComparacao(elementoId, variacao) {
+    const elemento = document.getElementById(elementoId);
+    if (!elemento) return;
+    
+    if (variacao === null || variacao === undefined || variacao === 0) {
+        elemento.style.display = 'none';
+        return;
+    }
+    
+    const span = elemento.querySelector('span');
+    const icon = elemento.querySelector('i');
+    
+    // Remover classes antigas
+    elemento.classList.remove('positive', 'negative');
+    icon.classList.remove('fa-arrow-up', 'fa-arrow-down');
+    
+    // Adicionar classes e ícone apropriados
+    if (variacao > 0) {
+        elemento.classList.add('positive');
+        icon.classList.add('fa-arrow-up');
+        span.textContent = `${Math.abs(variacao).toFixed(1)}%`;
+    } else {
+        elemento.classList.add('negative');
+        icon.classList.add('fa-arrow-down');
+        span.textContent = `${Math.abs(variacao).toFixed(1)}%`;
+    }
+    
+    elemento.style.display = 'inline-flex';
 }
 
 // Listener para visibilidade da página
