@@ -245,10 +245,10 @@ function atualizarPlacar(dados) {
     document.getElementById('ticket-medio').textContent = formatarMoeda(dados.ticketMedio);
     
     // Atualizar comparações
-    if (dados.comparacao) {
-        atualizarComparacao('comparacao-total', dados.comparacao.totalVendasVariacao);
-        atualizarComparacao('comparacao-numero', dados.comparacao.numeroVendasVariacao);
-        atualizarComparacao('comparacao-ticket', dados.comparacao.ticketMedioVariacao);
+    if (dados.comparison) {
+        atualizarComparacao('comparacao-total', dados.comparison.totalVendasVariacao);
+        atualizarComparacao('comparacao-numero', dados.comparison.numeroVendasVariacao);
+        atualizarComparacao('comparacao-ticket', dados.comparison.ticketMedioVariacao);
     }
     
     // Atualizar gauge
@@ -315,7 +315,16 @@ function atualizarTopVendedores(vendedores) {
     
     const labels = vendedores.map(v => {
         const nome = v.nome || v.vendedor || 'Sem vendedor';
-        return nome.toUpperCase();
+        let label = nome.toUpperCase();
+        
+        // Adicionar indicador de comparação no label
+        if (v.variacao !== undefined && v.variacao !== null) {
+            const seta = v.variacao > 0 ? '↑' : '↓';
+            const cor = v.variacao > 0 ? '🟢' : '🔴';
+            label += ` ${seta} ${Math.abs(v.variacao).toFixed(1)}%`;
+        }
+        
+        return label;
     });
     const valores = vendedores.map(v => parseFloat(v.total) || 0);
     

@@ -140,6 +140,16 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
                                            @Param("dataInicio") LocalDate dataInicio,
                                            @Param("dataFim") LocalDate dataFim);
     
+    // Total de vendas por vendedor específico (para comparação no top 10)
+    @Query("SELECT COALESCE(SUM(v.valorVenda), 0) FROM Venda v WHERE " +
+           "v.vendedor = :vendedor AND " +
+           "(:filial IS NULL OR v.filial = :filial) AND " +
+           "v.dataVenda BETWEEN :dataInicio AND :dataFim")
+    BigDecimal totalVendasPorVendedor(@Param("vendedor") String vendedor,
+                                      @Param("filial") String filial,
+                                      @Param("dataInicio") LocalDate dataInicio,
+                                      @Param("dataFim") LocalDate dataFim);
+    
     // Debug query to check what months have sales data
     @Query(value = "SELECT EXTRACT(YEAR FROM v.data_venda) as ano, " +
            "EXTRACT(MONTH FROM v.data_venda) as mes, " +
