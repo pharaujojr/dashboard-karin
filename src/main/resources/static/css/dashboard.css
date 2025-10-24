@@ -232,6 +232,37 @@ body {
     font-weight: 400;
 }
 
+/* Indicador de comparação de período */
+.metric-comparison {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 8px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.metric-comparison.positive {
+    color: #059669;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.metric-comparison.negative {
+    color: #DC2626;
+    background: rgba(220, 38, 38, 0.1);
+}
+
+.metric-comparison i {
+    font-size: 0.85rem;
+}
+
+.metric-comparison.hidden {
+    display: none;
+}
+
 /* Seção MAX */
 .max-section {
     margin-bottom: 40px;

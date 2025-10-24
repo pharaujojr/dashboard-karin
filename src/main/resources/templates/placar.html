@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placar de Vendas</title>
+    <link rel="stylesheet" th:href="@{/css/placar.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header com navegação -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-trophy"></i> Placar de Vendas</h1>
+                <nav class="nav-links">
+                    <a href="/" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard Principal</a>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Configuração Inicial -->
+        <div id="config-panel" class="config-panel">
+            <div class="config-card">
+                <h2><i class="fas fa-cog"></i> Configuração do Placar</h2>
+                <p class="config-description">Configure os parâmetros uma única vez e acompanhe em tempo real</p>
+                
+                <div class="config-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="filtro-unidade"><i class="fas fa-building"></i> Unidade:</label>
+                            <select id="filtro-unidade" class="form-control">
+                                <option value="">Todas as Unidades</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="filtro-vendedor"><i class="fas fa-user"></i> Vendedor:</label>
+                            <select id="filtro-vendedor" class="form-control">
+                                <option value="">Todos os Vendedores</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tipo-periodo"><i class="fas fa-calendar"></i> Período:</label>
+                            <select id="tipo-periodo" class="form-control">
+                                <option value="hoje">Hoje</option>
+                                <option value="ontem">Ontem</option>
+                                <option value="semana">Esta Semana</option>
+                                <option value="mes" selected>Este Mês</option>
+                                <option value="mes-passado">Mês Passado</option>
+                                <option value="trimestre">Trimestre Atual</option>
+                                <option value="ano">Este Ano</option>
+                                <option value="personalizado">Período Personalizado</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group hidden" id="datas-personalizadas">
+                            <label for="data-inicio"><i class="fas fa-calendar-day"></i> Data Início:</label>
+                            <input type="date" id="data-inicio" class="form-control">
+                            
+                            <label for="data-fim"><i class="fas fa-calendar-day"></i> Data Fim:</label>
+                            <input type="date" id="data-fim" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="meta-vendas"><i class="fas fa-bullseye"></i> Meta de Vendas (R$):</label>
+                            <input type="number" id="meta-vendas" class="form-control" placeholder="Ex: 1000000" step="0.01" min="0" required>
+                        </div>
+                    </div>
+
+                    <button id="btn-iniciar" class="btn-primary">
+                        <i class="fas fa-play"></i> Iniciar Placar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel do Placar (oculto inicialmente) -->
+        <div id="placar-panel" class="placar-panel hidden">
+            <div class="placar-header">
+                <div class="placar-info">
+                    <h2>Placar Ativo</h2>
+                    <p id="placar-config-info"></p>
+                </div>
+                <div class="placar-actions">
+                    <div class="auto-refresh-indicator">
+                        <i class="fas fa-sync-alt"></i>
+                        <span id="ultimo-refresh">Carregando...</span>
+                    </div>
+                    <button id="btn-reconfigurar" class="btn-secondary">
+                        <i class="fas fa-cog"></i> Reconfigurar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Top 10 Vendedores e Gauge -->
+            <div class="top-section">
+                <div class="chart-container">
+                    <h3><i class="fas fa-medal"></i> Top 10 Vendedores do Período</h3>
+                    <canvas id="topVendedoresChart"></canvas>
+                </div>
+
+                <div class="gauge-container">
+                    <h3><i class="fas fa-bullseye"></i> Meta de Vendas</h3>
+                    <canvas id="gaugeChart"></canvas>
+                    <div class="gauge-info">
+                        <div class="gauge-value">
+                            <span class="gauge-label">Realizado:</span>
+                            <span id="gauge-realizado" class="gauge-number">R$ 0,00</span>
+                        </div>
+                        <div class="gauge-value">
+                            <span class="gauge-label">Meta:</span>
+                            <span id="gauge-meta" class="gauge-number">R$ 0,00</span>
+                        </div>
+                        <div class="gauge-value">
+                            <span class="gauge-label">Atingido:</span>
+                            <span id="gauge-percentual" class="gauge-number">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métricas -->
+            <div class="metrics-container">
+                <div class="metric-card">
+                    <div class="metric-icon total">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-label">Total de Vendas</div>
+                        <div class="metric-value" id="total-vendas">R$ 0,00</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon count">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-label">Número de Vendas</div>
+                        <div class="metric-value" id="numero-vendas">0</div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon average">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-label">Ticket Médio</div>
+                        <div class="metric-value" id="ticket-medio">R$ 0,00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos Alternados -->
+            <div class="charts-rotating">
+                <div class="chart-header">
+                    <h3 id="chart-title"><i class="fas fa-chart-area"></i> Vendas Acumuladas</h3>
+                    <div class="chart-toggle">
+                        <span class="toggle-indicator" id="toggle-indicator">
+                            <i class="fas fa-circle active"></i>
+                            <i class="fas fa-circle"></i>
+                        </span>
+                    </div>
+                </div>
+                <div class="rotating-chart-container">
+                    <canvas id="chart-acumulado" class="rotating-chart active"></canvas>
+                    <canvas id="chart-diario" class="rotating-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/placar.js}"></script>
+</body>
+</html>

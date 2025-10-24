@@ -23,7 +23,7 @@ public class VendaService {
     private VendaRepository vendaRepository;
     
     public DashboardResponse getDadosDashboard(String filial, String vendedor, 
-                                             LocalDate dataInicio, LocalDate dataFim, boolean agruparPorMes) {
+                                             LocalDate dataInicio, LocalDate dataFim, boolean agruparPorMes, String tipoPeriodo) {
         
     // Calcular total de vendas
     BigDecimal totalVendas = vendaRepository.somaVendasPorFiltros(filial, vendedor, dataInicio, dataFim);
@@ -50,13 +50,138 @@ public class VendaService {
         List<String> vendedores = vendaRepository.findDistinctVendedores();
 
     // Debug logs
-    logger.debug("getDadosDashboard params filial={}, vendedor={}, dataInicio={}, dataFim={}, agruparPorMes={}",
-        filial, vendedor, dataInicio, dataFim, agruparPorMes);
+    logger.debug("getDadosDashboard params filial={}, vendedor={}, dataInicio={}, dataFim={}, agruparPorMes={}, tipoPeriodo={}",
+        filial, vendedor, dataInicio, dataFim, agruparPorMes, tipoPeriodo);
     logger.debug("Totals -> totalVendas={}, numeroVendas={}, ticketMedio={}, dadosGrafico.size={}, top10.size={}",
         totalVendas, numeroVendas, ticketMedio, dadosGrafico != null ? dadosGrafico.size() : 0,
         top10Vendedores != null ? top10Vendedores.size() : 0);
         
-        return new DashboardResponse(totalVendas, numeroVendas, ticketMedio, maxResponse, dadosGrafico, top10Vendedores, filiais, vendedores);
+        // Calcular comparação com período anterior (apenas se não for período personalizado)
+        DashboardResponse.ComparisonData comparison = null;
+        if (tipoPeriodo != null && !tipoPeriodo.equals("personalizado")) {
+            comparison = calcularComparacao(filial, vendedor, dataInicio, dataFim, 
+                                          totalVendas, numeroVendas, ticketMedio, tipoPeriodo);
+        }
+        
+        DashboardResponse response = new DashboardResponse(totalVendas, numeroVendas, ticketMedio, maxResponse, 
+                                                          dadosGrafico, top10Vendedores, filiais, vendedores);
+        response.setComparison(comparison);
+        
+        return response;
+    }
+    
+    private DashboardResponse.ComparisonData calcularComparacao(String filial, String vendedor,
+                                                                LocalDate dataInicio, LocalDate dataFim,
+                                                                BigDecimal totalAtual, Long numeroAtual, BigDecimal ticketAtual,
+                                                                String tipoPeriodo) {
+        LocalDate dataInicioAnterior;
+        LocalDate dataFimAnterior;
+        
+        // Calcular período anterior baseado no tipo de período
+        switch (tipoPeriodo) {
+            case "mes":
+                // Para "este mês", comparar com o mesmo período do mês anterior
+                // Se dataFim for o último dia do mês, ajustar para o dia atual do mês anterior
+                LocalDate hoje = LocalDate.now();
+                dataInicioAnterior = dataInicio.minusMonths(1);
+                
+                // Se estamos comparando o mês atual e dataFim é o último dia do mês,
+                // ajustar para o dia de hoje do mês anterior
+                if (dataFim.getMonth() == hoje.getMonth() && 
+                    dataFim.getYear() == hoje.getYear() &&
+                    dataFim.getDayOfMonth() == dataFim.lengthOfMonth()) {
+                    // Estamos no mês atual, então comparar até o dia correspondente do mês anterior
+                    dataFimAnterior = dataInicio.minusMonths(1).withDayOfMonth(hoje.getDayOfMonth());
+                } else {
+                    // Mês completo ou outro caso
+                    dataFimAnterior = dataFim.minusMonths(1);
+                }
+                break;
+                
+            case "ano":
+                // Para "este ano", comparar com o mesmo período do ano anterior
+                LocalDate hojeAno = LocalDate.now();
+                dataInicioAnterior = dataInicio.minusYears(1);
+                
+                // Se estamos comparando o ano atual e dataFim é o último dia do ano,
+                // ajustar para o dia de hoje do ano anterior
+                if (dataFim.getYear() == hojeAno.getYear() &&
+                    dataFim.getDayOfYear() == dataFim.lengthOfYear()) {
+                    // Estamos no ano atual, então comparar até o dia correspondente do ano anterior
+                    dataFimAnterior = hojeAno.minusYears(1);
+                } else {
+                    // Ano completo ou outro caso
+                    dataFimAnterior = dataFim.minusYears(1);
+                }
+                break;
+                
+            case "trimestre":
+                // Para "trimestre", comparar com o trimestre anterior
+                dataInicioAnterior = dataInicio.minusMonths(3);
+                dataFimAnterior = dataFim.minusMonths(3);
+                break;
+                
+            case "semana":
+                // Para "esta semana", comparar com o mesmo período da semana anterior
+                LocalDate hojeSemana = LocalDate.now();
+                dataInicioAnterior = dataInicio.minusWeeks(1);
+                
+                // Se dataFim é domingo (fim da semana) e estamos na semana atual,
+                // ajustar para o dia de hoje da semana anterior
+                if (dataFim.getDayOfWeek() == java.time.DayOfWeek.SUNDAY &&
+                    !hojeSemana.isAfter(dataFim) && !hojeSemana.isBefore(dataInicio)) {
+                    // Estamos na semana atual, então comparar até o dia correspondente da semana anterior
+                    dataFimAnterior = hojeSemana.minusWeeks(1);
+                } else {
+                    // Semana completa ou outro caso
+                    dataFimAnterior = dataFim.minusWeeks(1);
+                }
+                break;
+                
+            default:
+                // Para "dia", "ontem", etc: subtrair o número de dias do período
+                long diasPeriodo = java.time.temporal.ChronoUnit.DAYS.between(dataInicio, dataFim) + 1;
+                dataInicioAnterior = dataInicio.minusDays(diasPeriodo);
+                dataFimAnterior = dataFim.minusDays(diasPeriodo);
+                break;
+        }
+        
+        // Buscar dados do período anterior
+        BigDecimal totalAnterior = vendaRepository.somaVendasPorFiltros(filial, vendedor, dataInicioAnterior, dataFimAnterior);
+        Long numeroAnterior = vendaRepository.contarVendasPorFiltros(filial, vendedor, dataInicioAnterior, dataFimAnterior);
+        BigDecimal ticketAnterior = vendaRepository.ticketMedioPorFiltros(filial, vendedor, dataInicioAnterior, dataFimAnterior);
+        
+        // Calcular variações percentuais
+        Double variacaoTotal = calcularVariacaoPercentual(totalAnterior, totalAtual);
+        Double variacaoNumero = calcularVariacaoPercentual(
+            numeroAnterior != null ? BigDecimal.valueOf(numeroAnterior) : BigDecimal.ZERO,
+            numeroAtual != null ? BigDecimal.valueOf(numeroAtual) : BigDecimal.ZERO
+        );
+        Double variacaoTicket = calcularVariacaoPercentual(ticketAnterior, ticketAtual);
+        
+        logger.debug("Comparação: período atual {}->{} vs anterior {}->{}. Variações: total={}%, numero={}%, ticket={}%",
+            dataInicio, dataFim, dataInicioAnterior, dataFimAnterior, variacaoTotal, variacaoNumero, variacaoTicket);
+        
+        return new DashboardResponse.ComparisonData(variacaoTotal, variacaoNumero, variacaoTicket);
+    }
+    
+    private Double calcularVariacaoPercentual(BigDecimal anterior, BigDecimal atual) {
+        if (anterior == null || atual == null) {
+            return null;
+        }
+        
+        if (anterior.compareTo(BigDecimal.ZERO) == 0) {
+            // Se anterior era zero e atual é maior, considerar como +100%
+            if (atual.compareTo(BigDecimal.ZERO) > 0) {
+                return 100.0;
+            }
+            return 0.0;
+        }
+        
+        BigDecimal diferenca = atual.subtract(anterior);
+        BigDecimal variacao = diferenca.divide(anterior, 4, java.math.RoundingMode.HALF_UP)
+                                       .multiply(BigDecimal.valueOf(100));
+        return variacao.doubleValue();
     }
     
     private DashboardResponse.MaxResponse obterDadosMax(String filial, String vendedor, 

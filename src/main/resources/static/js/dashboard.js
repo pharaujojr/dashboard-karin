@@ -292,6 +292,11 @@ async function filtrarDados() {
         if (tipoPeriodo === 'ano' || tipoPeriodo === 'trimestre') {
             params.append('agruparPorMes', 'true');
         }
+        
+        // Enviar tipo de período para cálculo de comparação
+        if (tipoPeriodo && tipoPeriodo !== 'personalizado') {
+            params.append('tipoPeriodo', tipoPeriodo);
+        }
 
         const response = await fetch(`${API_BASE_URL}/dashboard?${params}`);
         
@@ -351,6 +356,33 @@ function pararAutoRefresh() {
     }
 }
 
+// Atualizar indicador de comparação com período anterior
+function atualizarComparacao(elementoId, variacao) {
+    const elemento = document.getElementById(elementoId);
+    if (!elemento) return;
+    
+    // Se não houver variação, ocultar o indicador
+    if (variacao === null || variacao === undefined) {
+        elemento.classList.add('hidden');
+        return;
+    }
+    
+    // Mostrar o indicador
+    elemento.classList.remove('hidden');
+    
+    // Determinar se é positivo ou negativo
+    const isPositivo = variacao >= 0;
+    
+    // Atualizar classes
+    elemento.classList.remove('positive', 'negative');
+    elemento.classList.add(isPositivo ? 'positive' : 'negative');
+    
+    // Atualizar conteúdo (seta + percentual)
+    const seta = isPositivo ? '↑' : '↓';
+    const percentual = Math.abs(variacao).toFixed(1);
+    elemento.textContent = `${seta} ${percentual}%`;
+}
+
 // Atualizar dashboard com novos dados
 function atualizarDashboard(dados, tipoPeriodo = 'dia') {
     // Função auxiliar para atualizar elemento com verificação
@@ -365,6 +397,11 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
     atualizarElemento('total-vendas', formatarMoeda(dados.totalVendas));
     atualizarElemento('numero-vendas', dados.numeroVendas || '0');
     atualizarElemento('ticket-medio', formatarMoeda(dados.ticketMedio));
+    
+    // Atualizar indicadores de comparação
+    atualizarComparacao('comparison-total-vendas', dados.comparison?.totalVendasVariacao);
+    atualizarComparacao('comparison-numero-vendas', dados.comparison?.numeroVendasVariacao);
+    atualizarComparacao('comparison-ticket-medio', dados.comparison?.ticketMedioVariacao);
 
     // Atualizar seção MAX
     if (dados.maxResponse) {

@@ -15,6 +15,32 @@ public class DashboardResponse {
     private List<String> filiais;
     private List<String> vendedores;
     
+    // Campos de comparação com período anterior
+    private ComparisonData comparison;
+    
+    public static class ComparisonData {
+        private Double totalVendasVariacao;
+        private Double numeroVendasVariacao;
+        private Double ticketMedioVariacao;
+        
+        public ComparisonData() {}
+        
+        public ComparisonData(Double totalVendasVariacao, Double numeroVendasVariacao, Double ticketMedioVariacao) {
+            this.totalVendasVariacao = totalVendasVariacao;
+            this.numeroVendasVariacao = numeroVendasVariacao;
+            this.ticketMedioVariacao = ticketMedioVariacao;
+        }
+        
+        public Double getTotalVendasVariacao() { return totalVendasVariacao; }
+        public void setTotalVendasVariacao(Double totalVendasVariacao) { this.totalVendasVariacao = totalVendasVariacao; }
+        
+        public Double getNumeroVendasVariacao() { return numeroVendasVariacao; }
+        public void setNumeroVendasVariacao(Double numeroVendasVariacao) { this.numeroVendasVariacao = numeroVendasVariacao; }
+        
+        public Double getTicketMedioVariacao() { return ticketMedioVariacao; }
+        public void setTicketMedioVariacao(Double ticketMedioVariacao) { this.ticketMedioVariacao = ticketMedioVariacao; }
+    }
+    
     // Construtor
     public DashboardResponse() {}
     
@@ -95,6 +121,14 @@ public class DashboardResponse {
     
     public void setVendedores(List<String> vendedores) {
         this.vendedores = vendedores;
+    }
+    
+    public ComparisonData getComparison() {
+        return comparison;
+    }
+    
+    public void setComparison(ComparisonData comparison) {
+        this.comparison = comparison;
     }
     
     // Classe interna para os dados MAX
