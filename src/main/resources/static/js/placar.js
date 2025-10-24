@@ -261,16 +261,16 @@ function atualizarPlacar(dados) {
     // Verificar se os dados mudaram
     const dadosMudaram = !ultimosDados || JSON.stringify(ultimosDados) !== JSON.stringify(dados);
     
-    // Atualizar métricas (sempre atualiza textos, é rápido)
+    // Atualizar métricas e comparações (sempre atualiza textos, é rápido)
     document.getElementById('total-vendas').textContent = formatarMoeda(dados.totalVendas);
     document.getElementById('numero-vendas').textContent = dados.numeroVendas || '0';
     document.getElementById('ticket-medio').textContent = formatarMoeda(dados.ticketMedio);
     
-    // Atualizar comparações
-    if (dados.comparacao) {
-        atualizarComparacao('comparacao-total', dados.comparacao.totalVendasVariacao);
-        atualizarComparacao('comparacao-numero', dados.comparacao.numeroVendasVariacao);
-        atualizarComparacao('comparacao-ticket', dados.comparacao.ticketMedioVariacao);
+    // Atualizar comparações sempre
+    if (dados.comparison) {
+        atualizarComparacao('comparacao-total', dados.comparison.totalVendasVariacao);
+        atualizarComparacao('comparacao-numero', dados.comparison.numeroVendasVariacao);
+        atualizarComparacao('comparacao-ticket', dados.comparison.ticketMedioVariacao);
     }
     
     // Apenas redesenhar gráficos se os dados mudaram
@@ -422,6 +422,7 @@ function atualizarTopVendedores(vendedores) {
         return nome.toUpperCase();
     });
     const valores = vendedores.map(v => parseFloat(v.total) || 0);
+    const variacoes = vendedores.map(v => v.variacao || 0);
     
     topVendedoresChart = new Chart(ctx, {
         type: 'bar',
@@ -436,6 +437,45 @@ function atualizarTopVendedores(vendedores) {
                 borderRadius: 8
             }]
         },
+        plugins: [
+            {
+                id: 'valueLabelsWithComparison',
+                afterDatasetsDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    const meta = chart.getDatasetMeta(0);
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    
+                    for (let i = 0; i < meta.data.length; i++) {
+                        const bar = meta.data[i];
+                        const value = chart.data.datasets[0].data[i] || 0;
+                        const variacao = variacoes[i];
+                        const label = 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        
+                        // Valor em preto
+                        ctx.fillStyle = '#374151';
+                        ctx.font = 'bold 11px Arial';
+                        ctx.fillText(label, bar.x + 10, bar.y);
+                        
+                        // Adicionar indicador de comparação se houver variação
+                        if (variacao !== null && variacao !== undefined && variacao !== 0) {
+                            const variacaoText = Math.abs(variacao).toFixed(1) + '%';
+                            const arrow = variacao > 0 ? '▲' : '▼';
+                            const color = variacao > 0 ? '#10b981' : '#ef4444';
+                            
+                            // Medir largura do valor para posicionar a variação
+                            const labelWidth = ctx.measureText(label).width;
+                            
+                            ctx.fillStyle = color;
+                            ctx.font = 'bold 10px Arial';
+                            ctx.fillText(arrow + ' ' + variacaoText, bar.x + 15 + labelWidth, bar.y);
+                        }
+                    }
+                    ctx.restore();
+                }
+            }
+        ],
         options: {
             indexAxis: 'y',
             responsive: true,
@@ -443,7 +483,7 @@ function atualizarTopVendedores(vendedores) {
             layout: {
                 padding: {
                     left: 10,
-                    right: 100,
+                    right: 140,
                     top: 10,
                     bottom: 10
                 }
@@ -455,34 +495,25 @@ function atualizarTopVendedores(vendedores) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return 'R$ ' + context.parsed.x.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            const index = context.dataIndex;
+                            const variacao = variacoes[index];
+                            let tooltipText = 'R$ ' + context.parsed.x.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            
+                            if (variacao !== null && variacao !== undefined && variacao !== 0) {
+                                const variacaoText = variacao > 0 ? '+' + variacao.toFixed(1) : variacao.toFixed(1);
+                                tooltipText += ' (' + variacaoText + '%)';
+                            }
+                            return tooltipText;
                         }
-                    }
-                },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'end',
-                    formatter: function(value) {
-                        return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    },
-                    color: '#374151',
-                    font: {
-                        weight: 'bold',
-                        size: 11
                     }
                 }
             },
             scales: {
                 x: {
                     beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return 'R$ ' + value.toLocaleString('pt-BR');
-                        }
-                    },
+                    display: false,
                     grid: {
-                        display: true,
-                        color: 'rgba(0, 0, 0, 0.05)'
+                        display: false
                     }
                 },
                 y: {
@@ -491,8 +522,7 @@ function atualizarTopVendedores(vendedores) {
                     }
                 }
             }
-        },
-        plugins: [ChartDataLabels]
+        }
     });
 }
 
