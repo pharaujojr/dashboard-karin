@@ -315,16 +315,7 @@ function atualizarTopVendedores(vendedores) {
     
     const labels = vendedores.map(v => {
         const nome = v.nome || v.vendedor || 'Sem vendedor';
-        let label = nome.toUpperCase();
-        
-        // Adicionar indicador de comparação no label
-        if (v.variacao !== undefined && v.variacao !== null) {
-            const seta = v.variacao > 0 ? '↑' : '↓';
-            const cor = v.variacao > 0 ? '🟢' : '🔴';
-            label += ` ${seta} ${Math.abs(v.variacao).toFixed(1)}%`;
-        }
-        
-        return label;
+        return nome.toUpperCase();
     });
     const valores = vendedores.map(v => parseFloat(v.total) || 0);
     
@@ -338,7 +329,9 @@ function atualizarTopVendedores(vendedores) {
                 backgroundColor: 'rgba(102, 126, 234, 0.8)',
                 borderColor: 'rgba(102, 126, 234, 1)',
                 borderWidth: 2,
-                borderRadius: 8
+                borderRadius: 8,
+                // Armazenar variações para uso no datalabels
+                variacao: vendedores.map(v => v.variacao)
             }]
         },
         options: {
@@ -348,7 +341,7 @@ function atualizarTopVendedores(vendedores) {
             layout: {
                 padding: {
                     left: 10,
-                    right: 100,
+                    right: 120,
                     top: 10,
                     bottom: 10
                 }
@@ -360,17 +353,37 @@ function atualizarTopVendedores(vendedores) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return 'R$ ' + context.parsed.x.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            let label = 'R$ ' + context.parsed.x.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            const variacao = vendedores[context.dataIndex].variacao;
+                            if (variacao !== undefined && variacao !== null) {
+                                const sinal = variacao > 0 ? '+' : '';
+                                label += ` (${sinal}${variacao.toFixed(1)}%)`;
+                            }
+                            return label;
                         }
                     }
                 },
                 datalabels: {
                     anchor: 'end',
                     align: 'end',
-                    formatter: function(value) {
-                        return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    formatter: function(value, context) {
+                        const variacao = vendedores[context.dataIndex].variacao;
+                        let texto = 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        
+                        if (variacao !== undefined && variacao !== null) {
+                            const seta = variacao > 0 ? '↑' : '↓';
+                            texto += `  ${seta} ${Math.abs(variacao).toFixed(1)}%`;
+                        }
+                        
+                        return texto;
                     },
-                    color: '#374151',
+                    color: function(context) {
+                        const variacao = vendedores[context.dataIndex].variacao;
+                        if (variacao === undefined || variacao === null) {
+                            return '#374151';
+                        }
+                        return variacao > 0 ? '#10b981' : '#ef4444';
+                    },
                     font: {
                         weight: 'bold',
                         size: 11
