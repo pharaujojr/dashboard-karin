@@ -5,6 +5,7 @@ let topVendedoresChart;
 let autoRefreshInterval;
 const API_BASE_URL = '/api';
 const REFRESH_INTERVAL = 15000; // 15 segundos em milissegundos
+let ultimosDados = null; // Cache dos últimos dados recebidos
 
 // Inicialização da página
 document.addEventListener('DOMContentLoaded', function() {
@@ -385,6 +386,9 @@ function atualizarComparacao(elementoId, variacao) {
 
 // Atualizar dashboard com novos dados
 function atualizarDashboard(dados, tipoPeriodo = 'dia') {
+    // Verificar se os dados mudaram
+    const dadosMudaram = !ultimosDados || JSON.stringify(ultimosDados) !== JSON.stringify(dados);
+    
     // Função auxiliar para atualizar elemento com verificação
     function atualizarElemento(id, texto) {
         const elemento = document.getElementById(id);
@@ -393,7 +397,7 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
         }
     }
 
-    // Atualizar métricas principais
+    // Atualizar métricas principais (sempre atualiza textos, é rápido)
     atualizarElemento('total-vendas', formatarMoeda(dados.totalVendas));
     atualizarElemento('numero-vendas', dados.numeroVendas || '0');
     atualizarElemento('ticket-medio', formatarMoeda(dados.ticketMedio));
@@ -421,17 +425,23 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
         atualizarElemento('maior-venda-vendedor', detailsText);
     }
 
-    // Atualizar gráfico
-    atualizarGrafico(dados.dadosGrafico || [], tipoPeriodo);
-    
-    // Atualizar gráfico acumulado
-    atualizarGraficoAcumulado(dados.dadosGrafico || [], tipoPeriodo);
-    
-    // Atualizar gráfico de top vendedores
-    atualizarGraficoTopVendedores(dados.top10Vendedores || []);
+    // Apenas redesenhar gráficos se os dados mudaram
+    if (dadosMudaram) {
+        // Atualizar gráfico
+        atualizarGrafico(dados.dadosGrafico || [], tipoPeriodo);
+        
+        // Atualizar gráfico acumulado
+        atualizarGraficoAcumulado(dados.dadosGrafico || [], tipoPeriodo);
+        
+        // Atualizar gráfico de top vendedores
+        atualizarGraficoTopVendedores(dados.top10Vendedores || []);
 
-    // Animação de entrada
-    animarCartoes();
+        // Animação de entrada
+        animarCartoes();
+        
+        // Armazenar dados atuais
+        ultimosDados = JSON.parse(JSON.stringify(dados));
+    }
 }
 
 // Atualizar gráfico
@@ -558,6 +568,7 @@ function atualizarGraficoTopVendedores(topVendedores) {
 
     const labels = topVendedores.map(item => item.nome ? item.nome.toUpperCase() : 'SEM NOME');
     const valores = topVendedores.map(item => parseFloat(item.total) || 0);
+    const variacoes = topVendedores.map(item => item.variacao || 0);
 
     topVendedoresChart = new Chart(ctx, {
         type: 'bar',
@@ -587,16 +598,32 @@ function atualizarGraficoTopVendedores(topVendedores) {
                     ctx.save();
                     const meta = chart.getDatasetMeta(0);
                     ctx.font = 'bold 12px Arial';
-                    ctx.fillStyle = '#374151';
                     ctx.textAlign = 'left';
                     ctx.textBaseline = 'middle';
                     
                     for (let i = 0; i < meta.data.length; i++) {
                         const bar = meta.data[i];
                         const value = chart.data.datasets[0].data[i] || 0;
+                        const variacao = variacoes[i];
                         const label = formatarMoeda(value);
-                        // Position at the end of the horizontal bar
+                        
+                        // Valor em preto
+                        ctx.fillStyle = '#374151';
                         ctx.fillText(label, bar.x + 10, bar.y);
+                        
+                        // Adicionar indicador de comparação se houver variação
+                        if (variacao !== null && variacao !== undefined && variacao !== 0) {
+                            const variacaoText = Math.abs(variacao).toFixed(1) + '%';
+                            const arrow = variacao > 0 ? '▲' : '▼';
+                            const color = variacao > 0 ? '#10b981' : '#ef4444';
+                            
+                            // Medir largura do valor para posicionar a variação
+                            const labelWidth = ctx.measureText(label).width;
+                            
+                            ctx.fillStyle = color;
+                            ctx.font = 'bold 11px Arial';
+                            ctx.fillText(arrow + ' ' + variacaoText, bar.x + 15 + labelWidth, bar.y);
+                        }
                     }
                     ctx.restore();
                 }
@@ -608,7 +635,7 @@ function atualizarGraficoTopVendedores(topVendedores) {
             maintainAspectRatio: false,
             layout: {
                 padding: {
-                    right: 80 // Extra space for value labels at the end of bars
+                    right: 120 // Extra space for value labels and comparison at the end of bars
                 }
             },
             plugins: {
@@ -624,7 +651,15 @@ function atualizarGraficoTopVendedores(topVendedores) {
                     callbacks: {
                         label: function(context) {
                             const value = context.parsed.x; // For horizontal bars
-                            return 'Total: ' + formatarMoeda(value);
+                            const index = context.dataIndex;
+                            const variacao = variacoes[index];
+                            
+                            let tooltipText = 'Total: ' + formatarMoeda(value);
+                            if (variacao !== null && variacao !== undefined && variacao !== 0) {
+                                const variacaoText = variacao > 0 ? '+' + variacao.toFixed(1) : variacao.toFixed(1);
+                                tooltipText += ' (' + variacaoText + '%)';
+                            }
+                            return tooltipText;
                         }
                     }
                 }
