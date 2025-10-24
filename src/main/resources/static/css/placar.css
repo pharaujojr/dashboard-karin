@@ -360,6 +360,8 @@ body {
     height: auto !important;
     width: auto !important;
     flex-shrink: 0;
+    display: block;
+    margin: 0 auto;
 }
 
 .gauge-wrapper {
@@ -368,6 +370,7 @@ body {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    min-height: 0;
 }
 
 .gauge-meta-info {
