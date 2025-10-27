@@ -117,8 +117,8 @@ async function carregarDados() {
         
         // Verificar se os dados mudaram antes de atualizar
         if (dadosMudaram('jaragua', dadosJaragua)) {
-            atualizarGaugePrincipal('jaragua', dadosJaragua, UNIDADES_CONFIG.jaragua.meta);
-            atualizarGaugeUnidade('jaragua', dadosJaragua, UNIDADES_CONFIG.jaragua.meta);
+            atualizarGaugePrincipal('jaragua', dadosJaragua, dadosJaragua.meta);
+            atualizarGaugeUnidade('jaragua', dadosJaragua, dadosJaragua.meta);
             ultimosDados['jaragua'] = dadosJaragua;
         }
         
@@ -126,32 +126,32 @@ async function carregarDados() {
         const dadosMT = await buscarDadosUnidade(UNIDADES_CONFIG.matoGrosso.filiais);
         console.log('Dados Mato Grosso:', dadosMT);
         if (dadosMudaram('mt', dadosMT)) {
-            atualizarGaugePrincipal('mt', dadosMT, UNIDADES_CONFIG.matoGrosso.meta);
+            atualizarGaugePrincipal('mt', dadosMT, dadosMT.meta);
             ultimosDados['mt'] = dadosMT;
         }
         
         // Carregar dados individuais de cada unidade do MT
         const dadosMatupa = await buscarDadosUnidade(['Matupá']);
         if (dadosMudaram('matupa', dadosMatupa)) {
-            atualizarGaugeUnidade('matupa', dadosMatupa, UNIDADES_CONFIG.matupa.meta);
+            atualizarGaugeUnidade('matupa', dadosMatupa, dadosMatupa.meta);
             ultimosDados['matupa'] = dadosMatupa;
         }
         
         const dadosSorriso = await buscarDadosUnidade(['Sorriso']);
         if (dadosMudaram('sorriso', dadosSorriso)) {
-            atualizarGaugeUnidade('sorriso', dadosSorriso, UNIDADES_CONFIG.sorriso.meta);
+            atualizarGaugeUnidade('sorriso', dadosSorriso, dadosSorriso.meta);
             ultimosDados['sorriso'] = dadosSorriso;
         }
         
         const dadosLucas = await buscarDadosUnidade(['Lucas do Rio Verde']);
         if (dadosMudaram('lucas', dadosLucas)) {
-            atualizarGaugeUnidade('lucas', dadosLucas, UNIDADES_CONFIG.lucas.meta);
+            atualizarGaugeUnidade('lucas', dadosLucas, dadosLucas.meta);
             ultimosDados['lucas'] = dadosLucas;
         }
         
         const dadosSinop = await buscarDadosUnidade(['Sinop']);
         if (dadosMudaram('sinop', dadosSinop)) {
-            atualizarGaugeUnidade('sinop', dadosSinop, UNIDADES_CONFIG.sinop.meta);
+            atualizarGaugeUnidade('sinop', dadosSinop, dadosSinop.meta);
             ultimosDados['sinop'] = dadosSinop;
         }
         
@@ -205,17 +205,29 @@ async function buscarDadosUnidade(filiais) {
         
         const dados = await response.json();
         
+        // Calcular meta total somando as metas de todas as filiais
+        let metaTotal = 0;
+        if (dados.metas) {
+            filiais.forEach(filial => {
+                metaTotal += dados.metas[filial] || META_PADRAO;
+            });
+        } else {
+            metaTotal = META_PADRAO * filiais.length;
+        }
+        
         return {
             totalVendas: dados.totalVendas || 0,
             numeroVendas: dados.numeroVendas || 0,
-            ticketMedio: dados.ticketMedio || 0
+            ticketMedio: dados.ticketMedio || 0,
+            meta: metaTotal
         };
     } catch (error) {
         console.error('Erro ao buscar dados:', filiais, error);
         return {
             totalVendas: 0,
             numeroVendas: 0,
-            ticketMedio: 0
+            ticketMedio: 0,
+            meta: META_PADRAO * filiais.length
         };
     }
 }
