@@ -245,6 +245,8 @@ function atualizarGaugePrincipal(id, dados, meta) {
     // Atualizar valores de texto
     const elementoTotal = document.getElementById(`total-${id}`);
     const elementoMeta = document.getElementById(`meta-${id}`);
+    const elementoNumeroVendas = document.getElementById(`numero-vendas-${id}`);
+    const elementoTicketMedio = document.getElementById(`ticket-medio-${id}`);
     
     if (elementoTotal) {
         elementoTotal.textContent = formatarMoeda(dados.totalVendas);
@@ -252,6 +254,14 @@ function atualizarGaugePrincipal(id, dados, meta) {
     
     if (elementoMeta) {
         elementoMeta.textContent = formatarMoeda(meta);
+    }
+    
+    if (elementoNumeroVendas) {
+        elementoNumeroVendas.textContent = dados.numeroVendas || 0;
+    }
+    
+    if (elementoTicketMedio) {
+        elementoTicketMedio.textContent = formatarMoeda(dados.ticketMedio);
     }
     
     // Desenhar gauge (200x140 - reduzido)
