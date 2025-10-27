@@ -8,7 +8,7 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     color: #fff;
-    padding: 8px;
+    padding: 12px;
     height: 100vh;
     overflow: hidden;
     display: flex;
@@ -21,14 +21,14 @@ body {
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
 }
 
 /* Header */
 .header {
     background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-    border-radius: 8px;
-    padding: 8px 15px;
+    border-radius: 10px;
+    padding: 12px 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     flex-shrink: 0;
 }
@@ -38,22 +38,22 @@ body {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
 }
 
 .header h1 {
     color: #ffffff;
-    font-size: 18px;
+    font-size: 22px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .header h1 i {
-    font-size: 20px;
+    font-size: 24px;
 }
 
 .nav-links {
@@ -64,14 +64,14 @@ body {
 .nav-link {
     background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
     color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
+    padding: 7px 14px;
+    border-radius: 6px;
     text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     font-weight: 500;
-    font-size: 11px;
+    font-size: 13px;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -84,14 +84,14 @@ body {
 .main-gauges-section {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 12px;
     flex-shrink: 0;
 }
 
 .gauge-card {
     background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-    border-radius: 8px;
-    padding: 10px;
+    border-radius: 10px;
+    padding: 15px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
@@ -101,8 +101,8 @@ body {
 
 .gauge-card h2 {
     color: #ffffff;
-    font-size: 14px;
-    margin-bottom: 6px;
+    font-size: 16px;
+    margin-bottom: 8px;
     text-align: center;
     font-weight: 600;
     text-transform: uppercase;
@@ -116,14 +116,14 @@ body {
 
 .gauge-info {
     width: 100%;
-    margin-top: 6px;
+    margin-top: 8px;
 }
 
 .info-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 3px 0;
+    padding: 4px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -134,19 +134,19 @@ body {
 .info-row .label {
     font-weight: 500;
     color: rgba(255, 255, 255, 0.7);
-    font-size: 11px;
+    font-size: 13px;
 }
 
 .info-row .value {
     font-weight: 700;
     color: #60a5fa;
-    font-size: 11px;
+    font-size: 13px;
 }
 
 /* Container principal das unidades */
 .unidades-container {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex: 1;
     min-height: 0;
     overflow: hidden;
@@ -154,10 +154,10 @@ body {
 
 /* Seção Ranking de Vendas */
 .top-vendedores-section {
-    flex: 0 0 calc(50% - 5px);
+    flex: 0 0 calc(50% - 6px);
     background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-    border-radius: 8px;
-    padding: 10px;
+    border-radius: 10px;
+    padding: 15px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
@@ -166,8 +166,8 @@ body {
 
 .top-vendedores-section h3 {
     color: #fff;
-    font-size: 14px;
-    margin-bottom: 8px;
+    font-size: 16px;
+    margin-bottom: 10px;
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -177,7 +177,7 @@ body {
 .vendedores-chart {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     flex: 1;
     overflow: hidden;
 }
@@ -187,15 +187,15 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     overflow: hidden;
 }
 
 .unidades-section h2 {
-    font-size: 14px;
+    font-size: 16px;
     color: #ffffff;
     text-align: center;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 1px;
     flex-shrink: 0;
@@ -206,9 +206,9 @@ body {
     grid-template-columns: auto 1fr auto;
     align-items: center;
     background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-    border-radius: 8px;
-    padding: 8px 12px;
-    gap: 10px;
+    border-radius: 10px;
+    padding: 12px 16px;
+    gap: 15px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     animation: fadeIn 0.5s ease-in;
     transition: opacity 0.3s ease-in-out, transform 0.3s ease;
@@ -217,7 +217,7 @@ body {
 }
 
 .unidade-row:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
@@ -231,17 +231,17 @@ body {
 
 .unidade-info h4 {
     color: #fff;
-    font-size: 13px;
+    font-size: 15px;
     margin: 0;
     white-space: nowrap;
-    min-width: 100px;
+    min-width: 120px;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .unidade-metricas {
     display: flex;
-    gap: 15px;
+    gap: 20px;
     flex: 1;
     align-items: center;
 }
@@ -249,17 +249,17 @@ body {
 .metric {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
 }
 
 .metric-label {
-    font-size: 9px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
 }
 
 .metric-value {
-    font-size: 11px;
+    font-size: 13px;
     color: #fb923c;
     font-weight: 700;
 }
@@ -268,7 +268,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
 }
 
 .unidade-gauge canvas {
@@ -276,39 +276,39 @@ body {
 }
 
 .gauge-label {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.8);
-    margin-top: 2px;
+    margin-top: 3px;
 }
 
 /* Item do Vendedor */
 .vendedor-item {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 6px;
+    gap: 8px;
+    padding: 6px 10px;
     background: rgba(255,255,255,0.05);
-    border-radius: 5px;
+    border-radius: 6px;
     transition: all 0.3s ease;
 }
 
 .vendedor-item:hover {
     background: rgba(255,255,255,0.1);
-    transform: translateX(2px);
+    transform: translateX(3px);
 }
 
 .vendedor-posicao {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: bold;
     color: #fb923c;
-    min-width: 22px;
+    min-width: 26px;
     text-align: center;
 }
 
 .vendedor-nome {
     flex: 1;
-    font-size: 10px;
+    font-size: 12px;
     color: #ffffff;
     font-weight: 500;
     overflow: hidden;
@@ -318,9 +318,9 @@ body {
 
 .vendedor-barra-container {
     flex: 2;
-    height: 14px;
+    height: 18px;
     background: rgba(255,255,255,0.1);
-    border-radius: 7px;
+    border-radius: 9px;
     overflow: hidden;
     position: relative;
 }
@@ -328,16 +328,16 @@ body {
 .vendedor-barra {
     height: 100%;
     background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
-    border-radius: 7px;
+    border-radius: 9px;
     transition: width 0.6s ease;
-    box-shadow: 0 0 6px rgba(249, 115, 22, 0.5);
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
 }
 
 .vendedor-valor {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: bold;
     color: #fb923c;
-    min-width: 70px;
+    min-width: 85px;
     text-align: right;
 }
 
