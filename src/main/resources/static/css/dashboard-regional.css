@@ -1,0 +1,419 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    height: 100vh;
+    overflow: hidden;
+    padding: 10px;
+}
+
+.container {
+    max-width: 100%;
+    height: calc(100vh - 20px);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    border-radius: 10px;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.header h1 {
+    color: #ffffff;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.header h1 i {
+    font-size: 24px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-link {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    font-size: 13px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nav-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* Main Gauges Section */
+.main-gauges-section {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.gauge-card {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn 0.5s ease-in;
+}
+
+.gauge-card h2 {
+    color: #ffffff;
+    font-size: 18px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.gauge-card canvas {
+    display: block;
+    margin: 8px 0;
+}
+
+.gauge-info {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row .label {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+}
+
+.info-row .value {
+    font-weight: 700;
+    color: #60a5fa;
+    font-size: 14px;
+}
+
+/* Container principal das unidades */
+.unidades-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+/* Seção Top 10 Vendedores */
+.top-vendedores-section {
+    flex: 0 0 calc(50% - 10px);
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    /* Altura calculada: título h2 da seção (~65px com margin-bottom 15px) + 3 unidades completas + 2 gaps (15px cada) */
+    height: 615px;
+}
+
+.top-vendedores-section h3 {
+    color: #fff;
+    font-size: 1.3em;
+    margin-bottom: 20px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+}
+
+.vendedores-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.vendedores-chart::-webkit-scrollbar {
+    width: 8px;
+}
+
+.vendedores-chart::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.vendedores-chart::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.vendedores-chart::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Seção de unidades */
+.unidades-section {
+    flex: 0 0 calc(50% - 10px);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    /* Mesma altura do Top 10 para manter alinhamento */
+    height: 615px;
+}
+
+.unidades-section h2 {
+    color: #fff;
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.unidade-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    border-radius: 15px;
+    padding: 15px 20px;
+    gap: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.5s ease-in;
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease;
+}
+
+.unidade-row:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.unidade-row:last-child {
+    border-bottom: none;
+}
+
+.unidade-row.hidden {
+    display: none;
+}
+
+.unidade-info h4 {
+    color: #fff;
+    font-size: 1.3em;
+    margin: 0;
+    white-space: nowrap;
+    min-width: 150px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.unidade-metricas {
+    display: flex;
+    gap: 25px;
+    flex: 1;
+    align-items: center;
+}
+
+.metric {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.metric-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.metric-value {
+    font-size: 14px;
+    color: #fb923c;
+    font-weight: 700;
+}
+
+.unidade-gauge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.unidade-gauge canvas {
+    display: block;
+}
+
+.gauge-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 5px;
+}
+
+/* Item do Top Vendedores */
+.vendedor-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.vendedor-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.vendedor-posicao {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fb923c;
+    min-width: 25px;
+    text-align: center;
+}
+
+.vendedor-nome {
+    font-size: 12px;
+    color: #fff;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vendedor-barra-container {
+    flex: 1;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.vendedor-barra {
+    height: 100%;
+    background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+    border-radius: 8px;
+    transition: width 0.5s ease;
+}
+
+.vendedor-valor {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fb923c;
+    min-width: 80px;
+    text-align: right;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .main-gauges-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .unidade-row {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .unidade-gauge {
+        justify-self: center;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .header h1 {
+        font-size: 22px;
+    }
+    
+    .header h1 i {
+        font-size: 24px;
+    }
+    
+    .nav-links {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .nav-link {
+        justify-content: center;
+    }
+    
+    .gauge-card {
+        padding: 20px;
+    }
+    
+    .gauge-card h2 {
+        font-size: 20px;
+    }
+    
+    .metrics {
+        gap: 20px;
+    }
+    
+    .unidades-section {
+        padding: 20px;
+    }
+}

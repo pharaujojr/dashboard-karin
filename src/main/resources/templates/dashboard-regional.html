@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Regional - Vendas</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard-regional.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-chart-line"></i> Closing Day Nacional</h1>
+                <div class="nav-links">
+                    <a th:href="@{/}" class="nav-link">
+                        <i class="fas fa-home"></i> Dashboard Principal
+                    </a>
+                    <a th:href="@{/placar}" class="nav-link">
+                        <i class="fas fa-tv"></i> Placar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gauges Principais (Jaraguá do Sul e Mato Grosso) -->
+        <div class="main-gauges-section">
+            <!-- Jaraguá do Sul -->
+            <div class="gauge-card">
+                <h2>Jaraguá do Sul</h2>
+                <canvas id="gauge-jaragua" width="240" height="160"></canvas>
+                <div class="gauge-info">
+                    <div class="info-row">
+                        <span class="label">Total:</span>
+                        <span class="value" id="total-jaragua">R$ 0,00</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Meta:</span>
+                        <span class="value" id="meta-jaragua">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mato Grosso (Agregado) -->
+            <div class="gauge-card">
+                <h2>Mato Grosso</h2>
+                <canvas id="gauge-mt" width="240" height="160"></canvas>
+                <div class="gauge-info">
+                    <div class="info-row">
+                        <span class="label">Total:</span>
+                        <span class="value" id="total-mt">R$ 0,00</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Meta:</span>
+                        <span class="value" id="meta-mt">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unidades Detalhadas -->
+        <div class="unidades-container">
+            <!-- Top 10 Vendedores -->
+            <div class="top-vendedores-section">
+                <h3>Top 10 Vendedores</h3>
+                <div class="vendedores-chart" id="vendedores-chart"></div>
+            </div>
+
+            <!-- Desempenho por Unidade -->
+            <div class="unidades-section">
+                <h2>Desempenho por Unidade</h2>
+            
+            <!-- Jaraguá do Sul -->
+            <div class="unidade-row" id="unidade-jaragua">
+                <div class="unidade-info">
+                    <h4>Jaraguá do Sul</h4>
+                </div>
+                <div class="unidade-metricas">
+                    <div class="metric">
+                        <span class="metric-label">Nº Vendas:</span>
+                        <span class="metric-value" id="vendas-jaragua">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Ticket Médio:</span>
+                        <span class="metric-value" id="ticket-jaragua">R$ 0,00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total:</span>
+                        <span class="metric-value" id="total-unidade-jaragua">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="unidade-gauge">
+                    <canvas id="gauge-unidade-jaragua" width="160" height="120"></canvas>
+                    <div class="gauge-label">
+                        <span id="meta-unidade-jaragua">Meta: R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matupá -->
+            <div class="unidade-row" id="unidade-matupa">
+                <div class="unidade-info">
+                    <h4>Matupá</h4>
+                </div>
+                <div class="unidade-metricas">
+                    <div class="metric">
+                        <span class="metric-label">Nº Vendas:</span>
+                        <span class="metric-value" id="vendas-matupa">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Ticket Médio:</span>
+                        <span class="metric-value" id="ticket-matupa">R$ 0,00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total:</span>
+                        <span class="metric-value" id="total-unidade-matupa">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="unidade-gauge">
+                    <canvas id="gauge-unidade-matupa" width="160" height="120"></canvas>
+                    <div class="gauge-label">
+                        <span id="meta-unidade-matupa">Meta: R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sorriso -->
+            <div class="unidade-row" id="unidade-sorriso">
+                <div class="unidade-info">
+                    <h4>Sorriso</h4>
+                </div>
+                <div class="unidade-metricas">
+                    <div class="metric">
+                        <span class="metric-label">Nº Vendas:</span>
+                        <span class="metric-value" id="vendas-sorriso">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Ticket Médio:</span>
+                        <span class="metric-value" id="ticket-sorriso">R$ 0,00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total:</span>
+                        <span class="metric-value" id="total-unidade-sorriso">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="unidade-gauge">
+                    <canvas id="gauge-unidade-sorriso" width="160" height="120"></canvas>
+                    <div class="gauge-label">
+                        <span id="meta-unidade-sorriso">Meta: R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lucas do Rio Verde -->
+            <div class="unidade-row" id="unidade-lucas">
+                <div class="unidade-info">
+                    <h4>Lucas do Rio Verde</h4>
+                </div>
+                <div class="unidade-metricas">
+                    <div class="metric">
+                        <span class="metric-label">Nº Vendas:</span>
+                        <span class="metric-value" id="vendas-lucas">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Ticket Médio:</span>
+                        <span class="metric-value" id="ticket-lucas">R$ 0,00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total:</span>
+                        <span class="metric-value" id="total-unidade-lucas">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="unidade-gauge">
+                    <canvas id="gauge-unidade-lucas" width="160" height="120"></canvas>
+                    <div class="gauge-label">
+                        <span id="meta-unidade-lucas">Meta: R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sinop -->
+            <div class="unidade-row" id="unidade-sinop">
+                <div class="unidade-info">
+                    <h4>Sinop</h4>
+                </div>
+                <div class="unidade-metricas">
+                    <div class="metric">
+                        <span class="metric-label">Nº Vendas:</span>
+                        <span class="metric-value" id="vendas-sinop">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Ticket Médio:</span>
+                        <span class="metric-value" id="ticket-sinop">R$ 0,00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total:</span>
+                        <span class="metric-value" id="total-unidade-sinop">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="unidade-gauge">
+                    <canvas id="gauge-unidade-sinop" width="160" height="120"></canvas>
+                    <div class="gauge-label">
+                        <span id="meta-unidade-sinop">Meta: R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/dashboard-regional.js}"></script>
+</body>
+</html>

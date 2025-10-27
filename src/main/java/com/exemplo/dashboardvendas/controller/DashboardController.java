@@ -40,6 +40,11 @@ public class DashboardController {
         return "placar";
     }
     
+    @GetMapping("/regional")
+    public String regional() {
+        return "dashboard-regional";
+    }
+    
     @GetMapping("/api/dashboard")
     @ResponseBody
     public ResponseEntity<DashboardResponse> getDadosDashboard(
