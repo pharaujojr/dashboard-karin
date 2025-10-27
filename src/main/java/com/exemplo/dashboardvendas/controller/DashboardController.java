@@ -43,7 +43,7 @@ public class DashboardController {
     @GetMapping("/api/dashboard")
     @ResponseBody
     public ResponseEntity<DashboardResponse> getDadosDashboard(
-            @RequestParam(required = false) String filial,
+            @RequestParam(required = false) java.util.List<String> filial,
             @RequestParam(required = false) String vendedor,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,

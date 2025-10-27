@@ -22,49 +22,68 @@ public class VendaService {
     @Autowired
     private VendaRepository vendaRepository;
     
-    public DashboardResponse getDadosDashboard(String filial, String vendedor, 
+    public DashboardResponse getDadosDashboard(java.util.List<String> filiais, String vendedor, 
                                              LocalDate dataInicio, LocalDate dataFim, boolean agruparPorMes, String tipoPeriodo) {
         
-    // Calcular total de vendas
-    BigDecimal totalVendas = vendaRepository.somaVendasPorFiltros(filial, vendedor, dataInicio, dataFim);
+        // Calcular total de vendas - somar todas as filiais
+        BigDecimal totalVendas = BigDecimal.ZERO;
+        Long numeroVendas = 0L;
+        BigDecimal somaTickets = BigDecimal.ZERO;
         
-        // Calcular ticket médio
-        BigDecimal ticketMedio = vendaRepository.ticketMedioPorFiltros(filial, vendedor, dataInicio, dataFim);
+        if (filiais != null && !filiais.isEmpty()) {
+            for (String f : filiais) {
+                BigDecimal vendaFilial = vendaRepository.somaVendasPorFiltros(f, vendedor, dataInicio, dataFim);
+                Long numeroFilial = vendaRepository.contarVendasPorFiltros(f, vendedor, dataInicio, dataFim);
+                
+                if (vendaFilial != null) totalVendas = totalVendas.add(vendaFilial);
+                if (numeroFilial != null) numeroVendas += numeroFilial;
+            }
+            
+            // Calcular ticket médio geral
+            if (numeroVendas > 0) {
+                somaTickets = totalVendas.divide(new BigDecimal(numeroVendas), 2, java.math.RoundingMode.HALF_UP);
+            }
+        } else {
+            // Se não há filiais selecionadas, buscar todas
+            totalVendas = vendaRepository.somaVendasPorFiltros(null, vendedor, dataInicio, dataFim);
+            numeroVendas = vendaRepository.contarVendasPorFiltros(null, vendedor, dataInicio, dataFim);
+            somaTickets = vendaRepository.ticketMedioPorFiltros(null, vendedor, dataInicio, dataFim);
+        }
         
-        // Contar número de vendas
-        Long numeroVendas = vendaRepository.contarVendasPorFiltros(filial, vendedor, dataInicio, dataFim);
+        BigDecimal ticketMedio = somaTickets;
         
-        // Obter dados MAX
-        DashboardResponse.MaxResponse maxResponse = obterDadosMax(filial, vendedor, dataInicio, dataFim);
+        // Obter dados MAX - usar primeira filial ou null
+        String primeiraFilial = (filiais != null && !filiais.isEmpty()) ? filiais.get(0) : null;
+        DashboardResponse.MaxResponse maxResponse = obterDadosMax(primeiraFilial, vendedor, dataInicio, dataFim);
         
-        // Obter dados para gráfico (por dia ou por mês)
+        // Obter dados para gráfico (agregando todas as filiais)
         List<Map<String, Object>> dadosGrafico = agruparPorMes ? 
-            obterDadosGraficoPorMes(filial, vendedor, dataInicio, dataFim) :
-            obterDadosGrafico(filial, vendedor, dataInicio, dataFim);
+            obterDadosGraficoPorMesMultiplasFiliais(filiais, vendedor, dataInicio, dataFim) :
+            obterDadosGraficoMultiplasFiliais(filiais, vendedor, dataInicio, dataFim);
         
-        // Obter top 10 vendedores
-        List<Map<String, Object>> top10Vendedores = obterTop10Vendedores(filial, dataInicio, dataFim, tipoPeriodo);
+        // Obter top 10 vendedores (agregando todas as filiais)
+        List<Map<String, Object>> top10Vendedores = obterTop10VendedoresMultiplasFiliais(filiais, dataInicio, dataFim, tipoPeriodo);
         
         // Obter listas para filtros
-        List<String> filiais = vendaRepository.findDistinctFiliais();
+        List<String> todasFiliais = vendaRepository.findDistinctFiliais();
         List<String> vendedores = vendaRepository.findDistinctVendedores();
 
-    // Debug logs
-    logger.debug("getDadosDashboard params filial={}, vendedor={}, dataInicio={}, dataFim={}, agruparPorMes={}, tipoPeriodo={}",
-        filial, vendedor, dataInicio, dataFim, agruparPorMes, tipoPeriodo);
-    logger.debug("Totals -> totalVendas={}, numeroVendas={}, ticketMedio={}, dadosGrafico.size={}, top10.size={}",
-        totalVendas, numeroVendas, ticketMedio, dadosGrafico != null ? dadosGrafico.size() : 0,
-        top10Vendedores != null ? top10Vendedores.size() : 0);
+        // Debug logs
+        logger.debug("getDadosDashboard params filiais={}, vendedor={}, dataInicio={}, dataFim={}, agruparPorMes={}, tipoPeriodo={}",
+            filiais, vendedor, dataInicio, dataFim, agruparPorMes, tipoPeriodo);
+        logger.debug("Totals -> totalVendas={}, numeroVendas={}, ticketMedio={}, dadosGrafico.size={}, top10.size={}",
+            totalVendas, numeroVendas, ticketMedio, dadosGrafico != null ? dadosGrafico.size() : 0,
+            top10Vendedores != null ? top10Vendedores.size() : 0);
         
         // Calcular comparação com período anterior (apenas se não for período personalizado)
         DashboardResponse.ComparisonData comparison = null;
         if (tipoPeriodo != null && !tipoPeriodo.equals("personalizado")) {
-            comparison = calcularComparacao(filial, vendedor, dataInicio, dataFim, 
+            comparison = calcularComparacaoMultiplasFiliais(filiais, vendedor, dataInicio, dataFim, 
                                           totalVendas, numeroVendas, ticketMedio, tipoPeriodo);
         }
         
         DashboardResponse response = new DashboardResponse(totalVendas, numeroVendas, ticketMedio, maxResponse, 
-                                                          dadosGrafico, top10Vendedores, filiais, vendedores);
+                                                          dadosGrafico, top10Vendedores, todasFiliais, vendedores);
         response.setComparison(comparison);
         
         return response;
@@ -449,5 +468,187 @@ public class VendaService {
     
     public List<String> obterVendedoresPorUnidade(String filial) {
         return vendaRepository.findDistinctVendedoresByFilial(filial);
+    }
+    
+    // Métodos para múltiplas filiais
+    
+    private List<Map<String, Object>> obterDadosGraficoMultiplasFiliais(List<String> filiais, String vendedor, 
+                                                                        LocalDate dataInicio, LocalDate dataFim) {
+        if (filiais == null || filiais.isEmpty()) {
+            return obterDadosGrafico(null, vendedor, dataInicio, dataFim);
+        }
+        
+        // Agregar dados de todas as filiais
+        Map<String, BigDecimal> vendasPorData = new HashMap<>();
+        
+        for (String filial : filiais) {
+            List<Object[]> dadosRaw = vendaRepository.dadosGraficoVendasPorPeriodo(filial, vendedor, dataInicio, dataFim);
+            
+            for (Object[] dado : dadosRaw) {
+                Object rawData = dado[0];
+                String dataStr = "";
+                if (rawData instanceof java.time.LocalDate) {
+                    dataStr = ((java.time.LocalDate) rawData).toString();
+                } else if (rawData instanceof java.sql.Date) {
+                    dataStr = ((java.sql.Date) rawData).toLocalDate().toString();
+                } else if (rawData instanceof java.sql.Timestamp) {
+                    dataStr = ((java.sql.Timestamp) rawData).toLocalDateTime().toLocalDate().toString();
+                } else if (rawData != null) {
+                    dataStr = rawData.toString().split(" ")[0];
+                }
+                
+                BigDecimal valor = dado[1] != null ? new BigDecimal(dado[1].toString()) : BigDecimal.ZERO;
+                vendasPorData.merge(dataStr, valor, BigDecimal::add);
+            }
+        }
+        
+        // Converter para lista
+        List<Map<String, Object>> dadosGrafico = new ArrayList<>();
+        for (Map.Entry<String, BigDecimal> entry : vendasPorData.entrySet()) {
+            Map<String, Object> ponto = new HashMap<>();
+            ponto.put("data", entry.getKey());
+            ponto.put("valor", entry.getValue());
+            dadosGrafico.add(ponto);
+        }
+        
+        // Ordenar por data
+        dadosGrafico.sort((a, b) -> ((String)a.get("data")).compareTo((String)b.get("data")));
+        
+        return dadosGrafico;
+    }
+    
+    private List<Map<String, Object>> obterDadosGraficoPorMesMultiplasFiliais(List<String> filiais, String vendedor, 
+                                                                              LocalDate dataInicio, LocalDate dataFim) {
+        if (filiais == null || filiais.isEmpty()) {
+            return obterDadosGraficoPorMes(null, vendedor, dataInicio, dataFim);
+        }
+        
+        // Agregar dados de todas as filiais
+        Map<String, BigDecimal> vendasPorMes = new HashMap<>();
+        
+        for (String filial : filiais) {
+            List<Object[]> dadosRaw = vendaRepository.dadosGraficoVendasPorMes(filial, vendedor, dataInicio, dataFim);
+            
+            for (Object[] dado : dadosRaw) {
+                String mesStr = dado[0].toString();
+                BigDecimal valor = dado[1] != null ? new BigDecimal(dado[1].toString()) : BigDecimal.ZERO;
+                vendasPorMes.merge(mesStr, valor, BigDecimal::add);
+            }
+        }
+        
+        // Converter para lista
+        List<Map<String, Object>> dadosGrafico = new ArrayList<>();
+        for (Map.Entry<String, BigDecimal> entry : vendasPorMes.entrySet()) {
+            Map<String, Object> ponto = new HashMap<>();
+            ponto.put("data", entry.getKey());
+            ponto.put("valor", entry.getValue());
+            dadosGrafico.add(ponto);
+        }
+        
+        // Ordenar por data
+        dadosGrafico.sort((a, b) -> ((String)a.get("data")).compareTo((String)b.get("data")));
+        
+        return dadosGrafico;
+    }
+    
+    private List<Map<String, Object>> obterTop10VendedoresMultiplasFiliais(List<String> filiais, LocalDate dataInicio, 
+                                                                           LocalDate dataFim, String tipoPeriodo) {
+        if (filiais == null || filiais.isEmpty()) {
+            return obterTop10Vendedores(null, dataInicio, dataFim, tipoPeriodo);
+        }
+        
+        // Agregar vendedores de todas as filiais
+        Map<String, BigDecimal> vendasPorVendedor = new HashMap<>();
+        Map<String, BigDecimal> vendasAnterioresPorVendedor = new HashMap<>();
+        
+        // Calcular período anterior
+        LocalDate[] periodoAnterior = calcularPeriodoAnterior(dataInicio, dataFim, tipoPeriodo);
+        LocalDate dataInicioAnterior = periodoAnterior[0];
+        LocalDate dataFimAnterior = periodoAnterior[1];
+        
+        for (String filial : filiais) {
+            List<Object[]> vendedoresRaw = vendaRepository.top10Vendedores(filial, dataInicio, dataFim);
+            
+            for (Object[] vendedor : vendedoresRaw) {
+                String nomeVendedor = (String) vendedor[0];
+                BigDecimal valor = vendedor[1] != null ? new BigDecimal(vendedor[1].toString()) : BigDecimal.ZERO;
+                vendasPorVendedor.merge(nomeVendedor, valor, BigDecimal::add);
+                
+                // Calcular vendas anteriores deste vendedor
+                BigDecimal totalAnterior = vendaRepository.somaVendasPorFiltros(filial, nomeVendedor, dataInicioAnterior, dataFimAnterior);
+                if (totalAnterior == null) totalAnterior = BigDecimal.ZERO;
+                vendasAnterioresPorVendedor.merge(nomeVendedor, totalAnterior, BigDecimal::add);
+            }
+        }
+        
+        // Converter para lista e ordenar
+        List<Map<String, Object>> top10 = new ArrayList<>();
+        for (Map.Entry<String, BigDecimal> entry : vendasPorVendedor.entrySet()) {
+            Map<String, Object> vendedor = new HashMap<>();
+            vendedor.put("nome", entry.getKey());
+            vendedor.put("total", entry.getValue());
+            
+            // Calcular variação
+            BigDecimal totalAtual = entry.getValue();
+            BigDecimal totalAnterior = vendasAnterioresPorVendedor.getOrDefault(entry.getKey(), BigDecimal.ZERO);
+            
+            if (totalAnterior.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal diferenca = totalAtual.subtract(totalAnterior);
+                BigDecimal variacao = diferenca.divide(totalAnterior, 4, java.math.RoundingMode.HALF_UP).multiply(new BigDecimal(100));
+                vendedor.put("variacao", variacao);
+            } else if (totalAtual.compareTo(BigDecimal.ZERO) > 0) {
+                vendedor.put("variacao", new BigDecimal(100));
+            } else {
+                vendedor.put("variacao", BigDecimal.ZERO);
+            }
+            
+            top10.add(vendedor);
+        }
+        
+        // Ordenar por total (decrescente) e pegar top 10
+        top10.sort((a, b) -> ((BigDecimal)b.get("total")).compareTo((BigDecimal)a.get("total")));
+        
+        return top10.size() > 10 ? top10.subList(0, 10) : top10;
+    }
+    
+    private DashboardResponse.ComparisonData calcularComparacaoMultiplasFiliais(List<String> filiais, String vendedor,
+                                                                                LocalDate dataInicio, LocalDate dataFim,
+                                                                                BigDecimal totalAtual, Long numeroAtual, 
+                                                                                BigDecimal ticketAtual, String tipoPeriodo) {
+        if (filiais == null || filiais.isEmpty()) {
+            return calcularComparacao(null, vendedor, dataInicio, dataFim, totalAtual, numeroAtual, ticketAtual, tipoPeriodo);
+        }
+        
+        // Calcular período anterior
+        LocalDate[] periodoAnterior = calcularPeriodoAnterior(dataInicio, dataFim, tipoPeriodo);
+        LocalDate dataInicioAnterior = periodoAnterior[0];
+        LocalDate dataFimAnterior = periodoAnterior[1];
+        
+        // Agregar dados do período anterior
+        BigDecimal totalAnterior = BigDecimal.ZERO;
+        Long numeroAnterior = 0L;
+        
+        for (String filial : filiais) {
+            BigDecimal vendaFilial = vendaRepository.somaVendasPorFiltros(filial, vendedor, dataInicioAnterior, dataFimAnterior);
+            Long numeroFilial = vendaRepository.contarVendasPorFiltros(filial, vendedor, dataInicioAnterior, dataFimAnterior);
+            
+            if (vendaFilial != null) totalAnterior = totalAnterior.add(vendaFilial);
+            if (numeroFilial != null) numeroAnterior += numeroFilial;
+        }
+        
+        BigDecimal ticketAnterior = numeroAnterior > 0 ? 
+            totalAnterior.divide(new BigDecimal(numeroAnterior), 2, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO;
+        
+        // Calcular variações
+        Double totalVendasVariacao = calcularVariacaoPercentual(totalAnterior, totalAtual);
+        Double numeroVendasVariacao = calcularVariacaoPercentual(new BigDecimal(numeroAnterior), new BigDecimal(numeroAtual));
+        Double ticketMedioVariacao = calcularVariacaoPercentual(ticketAnterior, ticketAtual);
+        
+        logger.debug("Comparison (multiple branches) -> Current: total={}, numero={}, ticket={}", totalAtual, numeroAtual, ticketAtual);
+        logger.debug("Comparison (multiple branches) -> Previous: total={}, numero={}, ticket={}", totalAnterior, numeroAnterior, ticketAnterior);
+        logger.debug("Comparison (multiple branches) -> Variations: total={}%, numero={}%, ticket={}%", 
+            totalVendasVariacao, numeroVendasVariacao, ticketMedioVariacao);
+        
+        return new DashboardResponse.ComparisonData(totalVendasVariacao, numeroVendasVariacao, ticketMedioVariacao);
     }
 }

@@ -20,7 +20,42 @@ document.addEventListener('DOMContentLoaded', () => {
     carregarFiltros();
     configurarEventos();
     verificarParametrosURL();
+    ajustarLayoutResponsivo();
 });
+
+// Ajustar layout responsivo
+function ajustarLayoutResponsivo() {
+    // Ajustar quando a janela for redimensionada
+    window.addEventListener('resize', () => {
+        if (placarConfig && gaugeChart) {
+            // Redesenhar gauge com novo tamanho
+            setTimeout(() => {
+                ajustarTamanhoGauge();
+                if (ultimosDados) {
+                    atualizarGauge(ultimosDados.totalVendas);
+                }
+            }, 100);
+        }
+    });
+}
+
+// Ajustar tamanho do canvas do gauge
+function ajustarTamanhoGauge() {
+    const canvas = document.getElementById('gaugeChart');
+    const container = canvas.parentElement;
+    
+    // Obter tamanho disponível do container
+    const containerWidth = container.offsetWidth;
+    const containerHeight = container.offsetHeight;
+    
+    // Calcular tamanho ideal (mantendo proporção)
+    const maxWidth = Math.min(containerWidth * 0.95, 350);
+    const maxHeight = Math.min(containerHeight * 0.9, 280);
+    
+    // Aplicar novo tamanho
+    canvas.width = maxWidth;
+    canvas.height = maxHeight;
+}
 
 // Helper para obter tamanho de fonte baseado no modo TV
 function getFontSize(normalSize) {
@@ -85,12 +120,27 @@ async function carregarFiltros() {
         const responseFiliais = await fetch(`${API_BASE_URL}/filiais`);
         const filiais = await responseFiliais.json();
         
-        const selectUnidade = document.getElementById('filtro-unidade');
-        filiais.forEach(filial => {
-            const option = document.createElement('option');
-            option.value = filial;
-            option.textContent = filial;
-            selectUnidade.appendChild(option);
+        const checkboxesContainer = document.getElementById('unidades-checkboxes');
+        filiais.forEach((filial, index) => {
+            const checkboxItem = document.createElement('div');
+            checkboxItem.className = 'checkbox-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `unidade-${index}`;
+            checkbox.value = filial;
+            checkbox.checked = false;
+            
+            const label = document.createElement('label');
+            label.htmlFor = `unidade-${index}`;
+            label.textContent = filial;
+            
+            checkboxItem.appendChild(checkbox);
+            checkboxItem.appendChild(label);
+            checkboxesContainer.appendChild(checkboxItem);
+            
+            // Event listener para cada checkbox
+            checkbox.addEventListener('change', atualizarSelecaoUnidades);
         });
         
         // Carregar vendedores
@@ -123,6 +173,39 @@ function configurarEventos() {
     document.getElementById('btn-iniciar').addEventListener('click', iniciarPlacar);
     document.getElementById('btn-reconfigurar-dropdown').addEventListener('click', reconfigurar);
     
+    // Dropdown de unidades
+    const unidadesBtn = document.getElementById('unidades-dropdown-btn');
+    const unidadesList = document.getElementById('unidades-list');
+    
+    unidadesBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        unidadesList.classList.toggle('hidden');
+        unidadesBtn.classList.toggle('open');
+    });
+    
+    // Checkbox "Todas as Unidades"
+    const todasCheckbox = document.getElementById('unidade-todas');
+    todasCheckbox.addEventListener('change', (e) => {
+        const checkboxes = document.querySelectorAll('#unidades-checkboxes input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+        });
+        if (!e.target.checked) {
+            e.target.checked = true;
+        }
+        atualizarSelecaoUnidades();
+    });
+    
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (!unidadesList.classList.contains('hidden') && 
+            !unidadesList.contains(e.target) && 
+            e.target !== unidadesBtn) {
+            unidadesList.classList.add('hidden');
+            unidadesBtn.classList.remove('open');
+        }
+    });
+    
     // Dropdown menu
     const btnMenu = document.getElementById('btn-menu');
     const dropdownMenu = document.getElementById('dropdown-menu');
@@ -140,6 +223,52 @@ function configurarEventos() {
             dropdownMenu.classList.add('hidden');
         }
     });
+}
+
+// Atualizar seleção de unidades
+function atualizarSelecaoUnidades() {
+    const todasCheckbox = document.getElementById('unidade-todas');
+    const checkboxes = document.querySelectorAll('#unidades-checkboxes input[type="checkbox"]');
+    const selectedText = document.getElementById('unidades-selected-text');
+    
+    // Se algum checkbox individual foi marcado, desmarcar "Todas"
+    const algumMarcado = Array.from(checkboxes).some(cb => cb.checked);
+    if (algumMarcado) {
+        todasCheckbox.checked = false;
+    } else {
+        // Se nenhum checkbox está marcado, marcar "Todas"
+        todasCheckbox.checked = true;
+    }
+    
+    // Atualizar texto do botão
+    if (todasCheckbox.checked) {
+        selectedText.textContent = 'Todas as Unidades';
+    } else {
+        const selecionadas = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        if (selecionadas.length === 0) {
+            selectedText.textContent = 'Todas as Unidades';
+            todasCheckbox.checked = true;
+        } else if (selecionadas.length === 1) {
+            selectedText.textContent = selecionadas[0];
+        } else {
+            selectedText.textContent = `${selecionadas.length} unidades selecionadas`;
+        }
+    }
+}
+
+// Obter unidades selecionadas
+function obterUnidadesSelecionadas() {
+    const todasCheckbox = document.getElementById('unidade-todas');
+    
+    if (todasCheckbox.checked) {
+        return []; // Array vazio significa "todas"
+    }
+    
+    const checkboxes = document.querySelectorAll('#unidades-checkboxes input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
 }
 
 // Calcular datas baseadas no período
@@ -221,7 +350,7 @@ function formatarDataParaAPI(data) {
 
 // Iniciar placar
 async function iniciarPlacar() {
-    const unidade = document.getElementById('filtro-unidade').value;
+    const unidadesSelecionadas = obterUnidadesSelecionadas();
     const vendedor = document.getElementById('filtro-vendedor').value;
     const tipoPeriodo = document.getElementById('tipo-periodo').value;
     const meta = parseFloat(document.getElementById('meta-vendas').value);
@@ -235,7 +364,7 @@ async function iniciarPlacar() {
     if (!datas) return;
     
     placarConfig = {
-        unidade,
+        unidades: unidadesSelecionadas,
         vendedor,
         tipoPeriodo,
         dataInicio: datas.dataInicio,
@@ -263,7 +392,17 @@ async function iniciarPlacar() {
 // Atualizar info do placar
 function atualizarInfoPlacar() {
     const info = [];
-    if (placarConfig.unidade) info.push(`Unidade: ${placarConfig.unidade}`);
+    
+    if (placarConfig.unidades && placarConfig.unidades.length > 0) {
+        if (placarConfig.unidades.length === 1) {
+            info.push(`Unidade: ${placarConfig.unidades[0]}`);
+        } else {
+            info.push(`Unidades: ${placarConfig.unidades.length} selecionadas`);
+        }
+    } else {
+        info.push('Todas as Unidades');
+    }
+    
     if (placarConfig.vendedor) info.push(`Vendedor: ${placarConfig.vendedor}`);
     info.push(`Período: ${getNomePeriodo(placarConfig.tipoPeriodo)}`);
     info.push(`Meta: ${formatarMoeda(placarConfig.meta)}`);
@@ -294,7 +433,13 @@ async function carregarDadosPlacar() {
             dataFim: placarConfig.dataFim
         });
         
-        if (placarConfig.unidade) params.append('filial', placarConfig.unidade);
+        // Adicionar unidades selecionadas (se não for todas)
+        if (placarConfig.unidades && placarConfig.unidades.length > 0) {
+            placarConfig.unidades.forEach(unidade => {
+                params.append('filial', unidade);
+            });
+        }
+        
         if (placarConfig.vendedor) params.append('vendedor', placarConfig.vendedor);
         
         if (placarConfig.tipoPeriodo === 'ano' || placarConfig.tipoPeriodo === 'trimestre') {
@@ -355,6 +500,10 @@ function atualizarGauge(valorAtual) {
     document.getElementById('gauge-meta').textContent = formatarMoeda(placarConfig.meta);
     
     const canvas = document.getElementById('gaugeChart');
+    
+    // Ajustar tamanho do canvas baseado no container
+    ajustarTamanhoGauge();
+    
     const ctx = canvas.getContext('2d');
     
     // Desenhar gauge manualmente
