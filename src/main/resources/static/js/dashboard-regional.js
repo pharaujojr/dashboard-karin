@@ -11,6 +11,13 @@ const INTERVALO_PAGINACAO = 10000; // 10 segundos
 let paginaAtual = 0;
 let intervaloPaginacao = null;
 
+// Configuração de paginação de vendedores
+const VENDEDORES_POR_PAGINA = 10; // Número de vendedores visíveis por vez
+let paginaAtualVendedores = 0;
+let totalPaginasVendedores = 0;
+let todosVendedores = [];
+let intervaloRotacaoVendedores = null;
+
 // Controle de atualização inteligente
 const INTERVALO_ATUALIZACAO = 15000; // 15 segundos
 let ultimosDados = {};
@@ -213,7 +220,7 @@ async function buscarDadosUnidade(filiais) {
     }
 }
 
-// Atualizar gauge principal (grandes)
+// Atualizar gauge principal (grandes) - responsivo
 function atualizarGaugePrincipal(id, dados, meta) {
     const percentual = (dados.totalVendas / meta) * 100;
     const percentualLimitado = Math.min(percentual, 110);
@@ -230,14 +237,14 @@ function atualizarGaugePrincipal(id, dados, meta) {
         elementoMeta.textContent = formatarMoeda(meta);
     }
     
-    // Desenhar gauge (240x160)
+    // Desenhar gauge (200x140 - reduzido)
     const canvas = document.getElementById(`gauge-${id}`);
     if (canvas) {
-        desenharGauge(canvas, percentualLimitado, 240, 160);
+        desenharGauge(canvas, percentualLimitado, 200, 140);
     }
 }
 
-// Atualizar gauge de unidade (pequenos)
+// Atualizar gauge de unidade (pequenos) - responsivo
 function atualizarGaugeUnidade(id, dados, meta) {
     const percentual = (dados.totalVendas / meta) * 100;
     const percentualLimitado = Math.min(percentual, 110);
@@ -264,10 +271,10 @@ function atualizarGaugeUnidade(id, dados, meta) {
         elementoMeta.textContent = 'Meta: ' + formatarMoeda(meta);
     }
     
-    // Desenhar gauge (160x120)
+    // Desenhar gauge (140x100 - reduzido)
     const canvas = document.getElementById(`gauge-unidade-${id}`);
     if (canvas) {
-        desenharGauge(canvas, percentualLimitado, 160, 120);
+        desenharGauge(canvas, percentualLimitado, 140, 100);
     }
 }
 
@@ -297,42 +304,71 @@ async function buscarTopVendedoresCorreto(filiais) {
     }
 }
 
-// Renderizar top 10 vendedores na seção geral
+// Renderiza o ranking geral de vendedores com paginação
 function renderizarTopVendedoresGeral(vendedores) {
-    const container = document.getElementById('vendedores-chart');
-    if (!container) {
-        console.error('Container vendedores-chart não encontrado');
-        return;
-    }
-    
-    console.log('Renderizando vendedores:', vendedores);
+    const chartContainer = document.getElementById('vendedores-chart');
     
     if (!vendedores || vendedores.length === 0) {
-        container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">Sem dados</div>';
+        chartContainer.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 12px;">Nenhum dado disponível</p>';
+        todosVendedores = [];
+        totalPaginasVendedores = 0;
+        pararRotacaoVendedores();
         return;
     }
+
+    todosVendedores = vendedores;
+    totalPaginasVendedores = Math.ceil(vendedores.length / VENDEDORES_POR_PAGINA);
     
-    // Encontrar o valor máximo para calcular a largura das barras
-    const maxValor = Math.max(...vendedores.map(v => v.total));
+    // Se tem mais de uma página, inicia a rotação
+    if (totalPaginasVendedores > 1) {
+        iniciarRotacaoVendedores();
+    } else {
+        pararRotacaoVendedores();
+    }
     
-    // Limitar a 10 vendedores
-    const top10 = vendedores.slice(0, 10);
+    mostrarPaginaVendedores();
+}
+
+// Mostra uma página específica de vendedores
+function mostrarPaginaVendedores() {
+    const chartContainer = document.getElementById('vendedores-chart');
+    const inicio = paginaAtualVendedores * VENDEDORES_POR_PAGINA;
+    const fim = Math.min(inicio + VENDEDORES_POR_PAGINA, todosVendedores.length);
+    const vendedoresPagina = todosVendedores.slice(inicio, fim);
     
-    container.innerHTML = top10.map((vendedor, index) => {
-        const larguraBarra = (vendedor.total / maxValor) * 100;
-        // O campo no backend é "nome", não "vendedor"
-        const nomeVendedor = (vendedor.nome || vendedor.vendedor || 'Sem nome').toUpperCase();
+    const maxVendas = Math.max(...todosVendedores.map(v => v.totalVendas));
+    
+    chartContainer.innerHTML = vendedoresPagina.map((vendedor, index) => {
+        const posicaoReal = inicio + index + 1;
+        const percentual = maxVendas > 0 ? (vendedor.totalVendas / maxVendas * 100) : 0;
         return `
             <div class="vendedor-item">
-                <span class="vendedor-posicao">${index + 1}º</span>
-                <span class="vendedor-nome" title="${nomeVendedor}">${nomeVendedor}</span>
+                <div class="vendedor-posicao">${posicaoReal}º</div>
+                <div class="vendedor-nome">${(vendedor.nome || 'N/A').toUpperCase()}</div>
                 <div class="vendedor-barra-container">
-                    <div class="vendedor-barra" style="width: ${larguraBarra}%"></div>
+                    <div class="vendedor-barra" style="width: ${percentual}%"></div>
                 </div>
-                <span class="vendedor-valor">${formatarMoeda(vendedor.total)}</span>
+                <div class="vendedor-valor">R$ ${vendedor.totalVendas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
             </div>
         `;
     }).join('');
+}
+
+// Inicia a rotação automática das páginas de vendedores
+function iniciarRotacaoVendedores() {
+    pararRotacaoVendedores();
+    intervaloRotacaoVendedores = setInterval(() => {
+        paginaAtualVendedores = (paginaAtualVendedores + 1) % totalPaginasVendedores;
+        mostrarPaginaVendedores();
+    }, INTERVALO_PAGINACAO);
+}
+
+// Para a rotação de vendedores
+function pararRotacaoVendedores() {
+    if (intervaloRotacaoVendedores) {
+        clearInterval(intervaloRotacaoVendedores);
+        intervaloRotacaoVendedores = null;
+    }
 }
 
 // Desenhar gauge no canvas
