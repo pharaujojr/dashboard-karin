@@ -209,6 +209,6 @@
         </div>
     </div>
 
-    <script th:src="@{/js/dashboard-regional.js}"></script>
+    <script th:src="@{/js/dashboard-regional.js(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmmss')})}"></script>
 </body>
 </html>
