@@ -16,11 +16,32 @@ let ultimosDados = null; // Armazenar últimos dados recebidos
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Placar: DOM Content Loaded');
+    
+    // Verificar se elementos essenciais existem
+    const elementosEssenciais = [
+        'unidades-dropdown-btn',
+        'unidades-list',
+        'unidade-todas',
+        'unidades-checkboxes',
+        'unidades-selected-text',
+        'btn-menu',
+        'dropdown-menu'
+    ];
+    
+    elementosEssenciais.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) {
+            console.error(`Elemento não encontrado: ${id}`);
+        } else {
+            console.log(`Elemento encontrado: ${id}`);
+        }
+    });
+    
     detectarModoTV();
     carregarFiltros();
     configurarEventos();
     verificarParametrosURL();
-    ajustarLayoutResponsivo();
 });
 
 // Ajustar layout responsivo
@@ -115,12 +136,20 @@ function autoIniciarPlacarTV() {
 
 // Carregar opções de filtros
 async function carregarFiltros() {
+    console.log('Iniciando carregamento de filtros...');
     try {
         // Carregar filiais
+        console.log('Buscando filiais em:', `${API_BASE_URL}/filiais`);
         const responseFiliais = await fetch(`${API_BASE_URL}/filiais`);
         const filiais = await responseFiliais.json();
+        console.log('Filiais carregadas:', filiais);
         
         const checkboxesContainer = document.getElementById('unidades-checkboxes');
+        if (!checkboxesContainer) {
+            console.error('Container de checkboxes não encontrado!');
+            return;
+        }
+        
         filiais.forEach((filial, index) => {
             const checkboxItem = document.createElement('div');
             checkboxItem.className = 'checkbox-item';
@@ -140,20 +169,31 @@ async function carregarFiltros() {
             checkboxesContainer.appendChild(checkboxItem);
             
             // Event listener para cada checkbox
-            checkbox.addEventListener('change', atualizarSelecaoUnidades);
+            checkbox.addEventListener('change', () => {
+                console.log('Checkbox mudou:', filial, checkbox.checked);
+                atualizarSelecaoUnidades();
+            });
         });
+        
+        console.log(`${filiais.length} checkboxes de filiais criados`);
         
         // Carregar vendedores
+        console.log('Buscando vendedores em:', `${API_BASE_URL}/vendedores`);
         const responseVendedores = await fetch(`${API_BASE_URL}/vendedores`);
         const vendedores = await responseVendedores.json();
+        console.log('Vendedores carregados:', vendedores.length);
         
         const selectVendedor = document.getElementById('filtro-vendedor');
-        vendedores.forEach(vendedor => {
-            const option = document.createElement('option');
-            option.value = vendedor;
-            option.textContent = vendedor;
-            selectVendedor.appendChild(option);
-        });
+        if (selectVendedor) {
+            vendedores.forEach(vendedor => {
+                const option = document.createElement('option');
+                option.value = vendedor;
+                option.textContent = vendedor;
+                selectVendedor.appendChild(option);
+            });
+        }
+        
+        console.log('Filtros carregados com sucesso');
     } catch (error) {
         console.error('Erro ao carregar filtros:', error);
     }
@@ -161,68 +201,98 @@ async function carregarFiltros() {
 
 // Configurar eventos
 function configurarEventos() {
-    document.getElementById('tipo-periodo').addEventListener('change', (e) => {
-        const datasPersonalizadas = document.getElementById('datas-personalizadas');
-        if (e.target.value === 'personalizado') {
-            datasPersonalizadas.classList.remove('hidden');
-        } else {
-            datasPersonalizadas.classList.add('hidden');
-        }
-    });
+    console.log('Configurando eventos...');
     
-    document.getElementById('btn-iniciar').addEventListener('click', iniciarPlacar);
-    document.getElementById('btn-reconfigurar-dropdown').addEventListener('click', reconfigurar);
+    // Tipo de período
+    const tipoPeriodoEl = document.getElementById('tipo-periodo');
+    if (tipoPeriodoEl) {
+        console.log('Configurando evento de tipo-periodo');
+        tipoPeriodoEl.addEventListener('change', (e) => {
+            const datasPersonalizadas = document.getElementById('datas-personalizadas');
+            if (datasPersonalizadas) {
+                if (e.target.value === 'personalizado') {
+                    datasPersonalizadas.classList.remove('hidden');
+                } else {
+                    datasPersonalizadas.classList.add('hidden');
+                }
+            }
+        });
+    }
+    
+    // Botões
+    const btnIniciar = document.getElementById('btn-iniciar');
+    if (btnIniciar) {
+        btnIniciar.addEventListener('click', iniciarPlacar);
+    }
+    
+    const btnReconfigurar = document.getElementById('btn-reconfigurar-dropdown');
+    if (btnReconfigurar) {
+        btnReconfigurar.addEventListener('click', reconfigurar);
+    }
     
     // Dropdown de unidades
     const unidadesBtn = document.getElementById('unidades-dropdown-btn');
     const unidadesList = document.getElementById('unidades-list');
     
-    unidadesBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        unidadesList.classList.toggle('hidden');
-        unidadesBtn.classList.toggle('open');
-    });
+    console.log('Dropdown unidades - btn:', unidadesBtn, 'list:', unidadesList);
+    
+    if (unidadesBtn && unidadesList) {
+        console.log('Configurando dropdown de unidades');
+        unidadesBtn.addEventListener('click', (e) => {
+            console.log('Dropdown de unidades clicado');
+            e.preventDefault();
+            e.stopPropagation();
+            unidadesList.classList.toggle('hidden');
+            unidadesBtn.classList.toggle('open');
+            console.log('Hidden?', unidadesList.classList.contains('hidden'));
+        });
+        
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!unidadesList.classList.contains('hidden') && 
+                !unidadesList.contains(e.target) && 
+                e.target !== unidadesBtn) {
+                unidadesList.classList.add('hidden');
+                unidadesBtn.classList.remove('open');
+            }
+        });
+    }
     
     // Checkbox "Todas as Unidades"
     const todasCheckbox = document.getElementById('unidade-todas');
-    todasCheckbox.addEventListener('change', (e) => {
-        const checkboxes = document.querySelectorAll('#unidades-checkboxes input[type="checkbox"]');
-        checkboxes.forEach(cb => {
-            cb.checked = false;
+    if (todasCheckbox) {
+        todasCheckbox.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('#unidades-checkboxes input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+            });
+            if (!e.target.checked) {
+                e.target.checked = true;
+            }
+            atualizarSelecaoUnidades();
         });
-        if (!e.target.checked) {
-            e.target.checked = true;
-        }
-        atualizarSelecaoUnidades();
-    });
+    }
     
-    // Fechar dropdown ao clicar fora
-    document.addEventListener('click', (e) => {
-        if (!unidadesList.classList.contains('hidden') && 
-            !unidadesList.contains(e.target) && 
-            e.target !== unidadesBtn) {
-            unidadesList.classList.add('hidden');
-            unidadesBtn.classList.remove('open');
-        }
-    });
-    
-    // Dropdown menu
+    // Dropdown menu principal
     const btnMenu = document.getElementById('btn-menu');
     const dropdownMenu = document.getElementById('dropdown-menu');
     
-    btnMenu.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdownMenu.classList.toggle('hidden');
-    });
-    
-    // Fechar dropdown ao clicar fora
-    document.addEventListener('click', (e) => {
-        if (!dropdownMenu.classList.contains('hidden') && 
-            !dropdownMenu.contains(e.target) && 
-            e.target !== btnMenu) {
-            dropdownMenu.classList.add('hidden');
-        }
-    });
+    if (btnMenu && dropdownMenu) {
+        btnMenu.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('hidden');
+        });
+        
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!dropdownMenu.classList.contains('hidden') && 
+                !dropdownMenu.contains(e.target) && 
+                e.target !== btnMenu) {
+                dropdownMenu.classList.add('hidden');
+            }
+        });
+    }
 }
 
 // Atualizar seleção de unidades
@@ -230,6 +300,11 @@ function atualizarSelecaoUnidades() {
     const todasCheckbox = document.getElementById('unidade-todas');
     const checkboxes = document.querySelectorAll('#unidades-checkboxes input[type="checkbox"]');
     const selectedText = document.getElementById('unidades-selected-text');
+    
+    if (!todasCheckbox || !selectedText) {
+        console.warn('Elementos de seleção de unidades não encontrados');
+        return;
+    }
     
     // Se algum checkbox individual foi marcado, desmarcar "Todas"
     const algumMarcado = Array.from(checkboxes).some(cb => cb.checked);
@@ -262,6 +337,11 @@ function atualizarSelecaoUnidades() {
 // Obter unidades selecionadas
 function obterUnidadesSelecionadas() {
     const todasCheckbox = document.getElementById('unidade-todas');
+    
+    if (!todasCheckbox) {
+        console.warn('Checkbox "Todas" não encontrado');
+        return [];
+    }
     
     if (todasCheckbox.checked) {
         return []; // Array vazio significa "todas"
