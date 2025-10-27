@@ -86,14 +86,23 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
                                          @Param("dataInicio") LocalDate dataInicio,
                                          @Param("dataFim") LocalDate dataFim);
     
-    // Top 10 vendedores
+    // Top vendedores (todos, sem limite)
     @Query(value = "SELECT v.vendedor, SUM(v.valor_venda) as total FROM vendas_nacional v WHERE " +
            "(:filial IS NULL OR v.filial = :filial) AND " +
            "v.data_venda BETWEEN :dataInicio AND :dataFim " +
-           "GROUP BY v.vendedor ORDER BY total DESC LIMIT 10", nativeQuery = true)
+           "GROUP BY v.vendedor ORDER BY total DESC", nativeQuery = true)
     List<Object[]> top10Vendedores(@Param("filial") String filial,
                                    @Param("dataInicio") LocalDate dataInicio,
                                    @Param("dataFim") LocalDate dataFim);
+    
+    // Top vendedores de múltiplas filiais (todos, sem limite)
+    @Query(value = "SELECT v.vendedor, SUM(v.valor_venda) as total FROM vendas_nacional v WHERE " +
+           "v.filial IN :filiais AND " +
+           "v.data_venda BETWEEN :dataInicio AND :dataFim " +
+           "GROUP BY v.vendedor ORDER BY total DESC", nativeQuery = true)
+    List<Object[]> topVendedoresMultiplasFiliais(@Param("filiais") List<String> filiais,
+                                                  @Param("dataInicio") LocalDate dataInicio,
+                                                  @Param("dataFim") LocalDate dataFim);
     
     // Unidade que mais vendeu (por valor total)
     @Query("SELECT v.filial, SUM(v.valorVenda) as total FROM Venda v WHERE " +

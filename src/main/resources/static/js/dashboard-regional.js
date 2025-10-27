@@ -158,12 +158,17 @@ async function carregarDados() {
         // Buscar top 10 vendedores de todas as filiais usando o endpoint correto
         const todasFiliais = ['Jaraguá do Sul', ...UNIDADES_CONFIG.matoGrosso.filiais];
         const vendedoresData = await buscarTopVendedoresCorreto(todasFiliais);
+        console.log('[CARREGAMENTO] Dados de vendedores recebidos:', vendedoresData);
         if (dadosMudaram('topVendedores', vendedoresData)) {
+            console.log('[CARREGAMENTO] Dados mudaram, renderizando...');
             renderizarTopVendedoresGeral(vendedoresData);
             ultimosDados['topVendedores'] = vendedoresData;
         } else {
+            console.log('[CARREGAMENTO] Dados não mudaram');
             // Mesmo que os dados não mudaram, garante que a rotação está ativa
+            console.log('[CARREGAMENTO] Verificando rotação - totalPaginasVendedores:', totalPaginasVendedores, 'intervaloRotacaoVendedores:', intervaloRotacaoVendedores);
             if (totalPaginasVendedores > 1 && !intervaloRotacaoVendedores) {
+                console.log('[CARREGAMENTO] Reativando rotação...');
                 iniciarRotacaoVendedores();
             }
         }
@@ -348,10 +353,14 @@ function renderizarTopVendedoresGeral(vendedores) {
     todosVendedores = vendedores;
     totalPaginasVendedores = Math.ceil(vendedores.length / VENDEDORES_POR_PAGINA);
     
+    console.log(`Total de vendedores: ${vendedores.length}, Páginas: ${totalPaginasVendedores}`);
+    
     // Se tem mais de uma página, inicia a rotação
     if (totalPaginasVendedores > 1) {
+        console.log('Iniciando rotação de vendedores...');
         iniciarRotacaoVendedores();
     } else {
+        console.log('Apenas 1 página, não rotaciona');
         pararRotacaoVendedores();
     }
     
@@ -360,10 +369,13 @@ function renderizarTopVendedoresGeral(vendedores) {
 
 // Mostra uma página específica de vendedores
 function mostrarPaginaVendedores() {
+    console.log('[MOSTRAR] mostrarPaginaVendedores() chamado, página:', paginaAtualVendedores);
     const chartContainer = document.getElementById('vendedores-chart');
     const inicio = paginaAtualVendedores * VENDEDORES_POR_PAGINA;
     const fim = Math.min(inicio + VENDEDORES_POR_PAGINA, todosVendedores.length);
     const vendedoresPagina = todosVendedores.slice(inicio, fim);
+    
+    console.log('[MOSTRAR] Mostrando vendedores:', inicio, 'a', fim, '- Total:', vendedoresPagina.length);
     
     // Proteção: filtrar vendedores válidos
     const vendedoresValidos = vendedoresPagina.filter(v => v && (v.totalVendas !== undefined || v.total !== undefined));
@@ -373,39 +385,56 @@ function mostrarPaginaVendedores() {
         return;
     }
     
-    // Normalizar campo totalVendas (pode vir como 'total' ou 'totalVendas')
-    const vendedoresNormalizados = vendedoresValidos.map(v => ({
-        ...v,
-        totalVendas: v.totalVendas || v.total || 0,
-        nome: v.nome || v.vendedor || 'N/A'
-    }));
+    // Animação de fade out
+    chartContainer.classList.add('fade-out');
     
-    const maxVendas = Math.max(...vendedoresNormalizados.map(v => v.totalVendas || 0));
-    
-    chartContainer.innerHTML = vendedoresNormalizados.map((vendedor, index) => {
-        const posicaoReal = inicio + index + 1;
-        const totalVendas = vendedor.totalVendas || 0;
-        const percentual = maxVendas > 0 ? (totalVendas / maxVendas * 100) : 0;
-        return `
-            <div class="vendedor-item">
-                <div class="vendedor-posicao">${posicaoReal}º</div>
-                <div class="vendedor-nome">${(vendedor.nome || 'N/A').toUpperCase()}</div>
-                <div class="vendedor-barra-container">
-                    <div class="vendedor-barra" style="width: ${percentual}%"></div>
+    setTimeout(() => {
+        // Normalizar campo totalVendas (pode vir como 'total' ou 'totalVendas')
+        const vendedoresNormalizados = vendedoresValidos.map(v => ({
+            ...v,
+            totalVendas: v.totalVendas || v.total || 0,
+            nome: v.nome || v.vendedor || 'N/A'
+        }));
+        
+        const maxVendas = Math.max(...vendedoresNormalizados.map(v => v.totalVendas || 0));
+        
+        chartContainer.innerHTML = vendedoresNormalizados.map((vendedor, index) => {
+            const posicaoReal = inicio + index + 1;
+            const totalVendas = vendedor.totalVendas || 0;
+            const percentual = maxVendas > 0 ? (totalVendas / maxVendas * 100) : 0;
+            return `
+                <div class="vendedor-item">
+                    <div class="vendedor-posicao">${posicaoReal}º</div>
+                    <div class="vendedor-nome">${(vendedor.nome || 'N/A').toUpperCase()}</div>
+                    <div class="vendedor-barra-container">
+                        <div class="vendedor-barra" style="width: ${percentual}%"></div>
+                    </div>
+                    <div class="vendedor-valor">R$ ${totalVendas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
                 </div>
-                <div class="vendedor-valor">R$ ${totalVendas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+        
+        // Animação de fade in
+        chartContainer.classList.remove('fade-out');
+        chartContainer.classList.add('fade-in');
+    }, 300); // Aguarda 300ms para o fade-out completar
 }
 
 // Inicia a rotação automática das páginas de vendedores
 function iniciarRotacaoVendedores() {
+    console.log('[ROTAÇÃO] Função iniciarRotacaoVendedores() chamada');
+    console.log('[ROTAÇÃO] Parando rotação anterior (se houver)...');
     pararRotacaoVendedores();
+    console.log('[ROTAÇÃO] Criando novo setInterval com INTERVALO_PAGINACAO:', INTERVALO_PAGINACAO);
     intervaloRotacaoVendedores = setInterval(() => {
+        console.log('[ROTAÇÃO] setInterval DISPAROU! Mudando página...');
+        console.log('[ROTAÇÃO] paginaAtualVendedores antes:', paginaAtualVendedores);
         paginaAtualVendedores = (paginaAtualVendedores + 1) % totalPaginasVendedores;
+        console.log('[ROTAÇÃO] paginaAtualVendedores depois:', paginaAtualVendedores);
+        console.log('[ROTAÇÃO] Chamando mostrarPaginaVendedores()...');
         mostrarPaginaVendedores();
     }, INTERVALO_PAGINACAO);
+    console.log('[ROTAÇÃO] setInterval criado, ID:', intervaloRotacaoVendedores);
 }
 
 // Para a rotação de vendedores

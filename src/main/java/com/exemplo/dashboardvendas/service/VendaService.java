@@ -568,58 +568,48 @@ public class VendaService {
             return obterTop10Vendedores(null, dataInicio, dataFim, tipoPeriodo);
         }
         
-        // Agregar vendedores de todas as filiais
-        Map<String, BigDecimal> vendasPorVendedor = new HashMap<>();
-        Map<String, BigDecimal> vendasAnterioresPorVendedor = new HashMap<>();
+        // Usar query otimizada para múltiplas filiais
+        List<Object[]> vendedoresRaw = vendaRepository.topVendedoresMultiplasFiliais(filiais, dataInicio, dataFim);
         
         // Calcular período anterior
         LocalDate[] periodoAnterior = calcularPeriodoAnterior(dataInicio, dataFim, tipoPeriodo);
         LocalDate dataInicioAnterior = periodoAnterior[0];
         LocalDate dataFimAnterior = periodoAnterior[1];
         
-        for (String filial : filiais) {
-            List<Object[]> vendedoresRaw = vendaRepository.top10Vendedores(filial, dataInicio, dataFim);
+        // Converter para lista de mapas
+        List<Map<String, Object>> resultado = new ArrayList<>();
+        for (Object[] vendedor : vendedoresRaw) {
+            String nomeVendedor = (String) vendedor[0];
+            BigDecimal total = vendedor[1] != null ? new BigDecimal(vendedor[1].toString()) : BigDecimal.ZERO;
             
-            for (Object[] vendedor : vendedoresRaw) {
-                String nomeVendedor = (String) vendedor[0];
-                BigDecimal valor = vendedor[1] != null ? new BigDecimal(vendedor[1].toString()) : BigDecimal.ZERO;
-                vendasPorVendedor.merge(nomeVendedor, valor, BigDecimal::add);
-                
-                // Calcular vendas anteriores deste vendedor
-                BigDecimal totalAnterior = vendaRepository.somaVendasPorFiltros(filial, nomeVendedor, dataInicioAnterior, dataFimAnterior);
-                if (totalAnterior == null) totalAnterior = BigDecimal.ZERO;
-                vendasAnterioresPorVendedor.merge(nomeVendedor, totalAnterior, BigDecimal::add);
+            // Calcular vendas anteriores deste vendedor em todas as filiais
+            BigDecimal totalAnterior = BigDecimal.ZERO;
+            for (String filial : filiais) {
+                BigDecimal valorFilial = vendaRepository.somaVendasPorFiltros(filial, nomeVendedor, dataInicioAnterior, dataFimAnterior);
+                if (valorFilial != null) {
+                    totalAnterior = totalAnterior.add(valorFilial);
+                }
             }
-        }
-        
-        // Converter para lista e ordenar
-        List<Map<String, Object>> top10 = new ArrayList<>();
-        for (Map.Entry<String, BigDecimal> entry : vendasPorVendedor.entrySet()) {
-            Map<String, Object> vendedor = new HashMap<>();
-            vendedor.put("nome", entry.getKey());
-            vendedor.put("total", entry.getValue());
             
-            // Calcular variação
-            BigDecimal totalAtual = entry.getValue();
-            BigDecimal totalAnterior = vendasAnterioresPorVendedor.getOrDefault(entry.getKey(), BigDecimal.ZERO);
+            Map<String, Object> vendedorMap = new HashMap<>();
+            vendedorMap.put("nome", nomeVendedor);
+            vendedorMap.put("total", total);
+            vendedorMap.put("totalAnterior", totalAnterior);
             
+            // Calcular variação percentual
             if (totalAnterior.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal diferenca = totalAtual.subtract(totalAnterior);
-                BigDecimal variacao = diferenca.divide(totalAnterior, 4, java.math.RoundingMode.HALF_UP).multiply(new BigDecimal(100));
-                vendedor.put("variacao", variacao);
-            } else if (totalAtual.compareTo(BigDecimal.ZERO) > 0) {
-                vendedor.put("variacao", new BigDecimal(100));
+                BigDecimal variacao = total.subtract(totalAnterior)
+                    .divide(totalAnterior, 4, java.math.RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"));
+                vendedorMap.put("variacao", variacao);
             } else {
-                vendedor.put("variacao", BigDecimal.ZERO);
+                vendedorMap.put("variacao", total.compareTo(BigDecimal.ZERO) > 0 ? new BigDecimal("100") : BigDecimal.ZERO);
             }
             
-            top10.add(vendedor);
+            resultado.add(vendedorMap);
         }
         
-        // Ordenar por total (decrescente) e pegar top 10
-        top10.sort((a, b) -> ((BigDecimal)b.get("total")).compareTo((BigDecimal)a.get("total")));
-        
-        return top10.size() > 10 ? top10.subList(0, 10) : top10;
+        return resultado;
     }
     
     private DashboardResponse.ComparisonData calcularComparacaoMultiplasFiliais(List<String> filiais, String vendedor,
