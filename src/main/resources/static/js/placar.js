@@ -15,7 +15,7 @@ let chartDiario = null;
 let ultimosDados = null; // Armazenar últimos dados recebidos
 
 // Inicialização
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('Placar: DOM Content Loaded');
     
     // Verificar se elementos essenciais existem
@@ -39,8 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     detectarModoTV();
-    carregarFiltros();
     configurarEventos();
+    
+    // Carregar filtros após configurar eventos
+    await carregarFiltros();
+    
     verificarParametrosURL();
 });
 
@@ -137,18 +140,29 @@ function autoIniciarPlacarTV() {
 // Carregar opções de filtros
 async function carregarFiltros() {
     console.log('Iniciando carregamento de filtros...');
+    
+    // Aguardar um pouco para garantir que o DOM está pronto
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     try {
+        const checkboxesContainer = document.getElementById('unidades-checkboxes');
+        if (!checkboxesContainer) {
+            console.error('Container de checkboxes não encontrado! Tentando novamente em 500ms...');
+            // Tentar novamente após um delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const retry = document.getElementById('unidades-checkboxes');
+            if (!retry) {
+                console.error('Container de checkboxes ainda não encontrado após retry!');
+                return;
+            }
+            return carregarFiltros(); // Chamar recursivamente
+        }
+        
         // Carregar filiais
         console.log('Buscando filiais em:', `${API_BASE_URL}/filiais`);
         const responseFiliais = await fetch(`${API_BASE_URL}/filiais`);
         const filiais = await responseFiliais.json();
         console.log('Filiais carregadas:', filiais);
-        
-        const checkboxesContainer = document.getElementById('unidades-checkboxes');
-        if (!checkboxesContainer) {
-            console.error('Container de checkboxes não encontrado!');
-            return;
-        }
         
         filiais.forEach((filial, index) => {
             const checkboxItem = document.createElement('div');
