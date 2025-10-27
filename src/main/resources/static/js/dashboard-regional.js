@@ -308,6 +308,8 @@ async function buscarTopVendedoresCorreto(filiais) {
 function renderizarTopVendedoresGeral(vendedores) {
     const chartContainer = document.getElementById('vendedores-chart');
     
+    console.log('Renderizando vendedores:', vendedores);
+    
     if (!vendedores || vendedores.length === 0) {
         chartContainer.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 12px;">Nenhum dado disponível</p>';
         todosVendedores = [];
@@ -336,11 +338,27 @@ function mostrarPaginaVendedores() {
     const fim = Math.min(inicio + VENDEDORES_POR_PAGINA, todosVendedores.length);
     const vendedoresPagina = todosVendedores.slice(inicio, fim);
     
-    const maxVendas = Math.max(...todosVendedores.map(v => v.totalVendas));
+    // Proteção: filtrar vendedores válidos
+    const vendedoresValidos = vendedoresPagina.filter(v => v && (v.totalVendas !== undefined || v.total !== undefined));
     
-    chartContainer.innerHTML = vendedoresPagina.map((vendedor, index) => {
+    if (vendedoresValidos.length === 0) {
+        chartContainer.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 12px;">Nenhum vendedor com dados válidos</p>';
+        return;
+    }
+    
+    // Normalizar campo totalVendas (pode vir como 'total' ou 'totalVendas')
+    const vendedoresNormalizados = vendedoresValidos.map(v => ({
+        ...v,
+        totalVendas: v.totalVendas || v.total || 0,
+        nome: v.nome || v.vendedor || 'N/A'
+    }));
+    
+    const maxVendas = Math.max(...vendedoresNormalizados.map(v => v.totalVendas || 0));
+    
+    chartContainer.innerHTML = vendedoresNormalizados.map((vendedor, index) => {
         const posicaoReal = inicio + index + 1;
-        const percentual = maxVendas > 0 ? (vendedor.totalVendas / maxVendas * 100) : 0;
+        const totalVendas = vendedor.totalVendas || 0;
+        const percentual = maxVendas > 0 ? (totalVendas / maxVendas * 100) : 0;
         return `
             <div class="vendedor-item">
                 <div class="vendedor-posicao">${posicaoReal}º</div>
@@ -348,7 +366,7 @@ function mostrarPaginaVendedores() {
                 <div class="vendedor-barra-container">
                     <div class="vendedor-barra" style="width: ${percentual}%"></div>
                 </div>
-                <div class="vendedor-valor">R$ ${vendedor.totalVendas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                <div class="vendedor-valor">R$ ${totalVendas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
             </div>
         `;
     }).join('');
