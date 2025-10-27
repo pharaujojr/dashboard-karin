@@ -161,6 +161,11 @@ async function carregarDados() {
         if (dadosMudaram('topVendedores', vendedoresData)) {
             renderizarTopVendedoresGeral(vendedoresData);
             ultimosDados['topVendedores'] = vendedoresData;
+        } else {
+            // Mesmo que os dados não mudaram, garante que a rotação está ativa
+            if (totalPaginasVendedores > 1 && !intervaloRotacaoVendedores) {
+                iniciarRotacaoVendedores();
+            }
         }
         
         console.log('=== Todos os dados carregados ===');
