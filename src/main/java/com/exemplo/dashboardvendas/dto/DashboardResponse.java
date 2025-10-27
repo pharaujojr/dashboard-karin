@@ -18,6 +18,9 @@ public class DashboardResponse {
     // Campos de comparação com período anterior
     private ComparisonData comparison;
     
+    // Metas por filial
+    private Map<String, BigDecimal> metas;
+    
     public static class ComparisonData {
         private Double totalVendasVariacao;
         private Double numeroVendasVariacao;
@@ -129,6 +132,14 @@ public class DashboardResponse {
     
     public void setComparison(ComparisonData comparison) {
         this.comparison = comparison;
+    }
+    
+    public Map<String, BigDecimal> getMetas() {
+        return metas;
+    }
+    
+    public void setMetas(Map<String, BigDecimal> metas) {
+        this.metas = metas;
     }
     
     // Classe interna para os dados MAX

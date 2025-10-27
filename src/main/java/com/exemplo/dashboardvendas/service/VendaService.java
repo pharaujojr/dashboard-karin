@@ -22,6 +22,9 @@ public class VendaService {
     @Autowired
     private VendaRepository vendaRepository;
     
+    @Autowired
+    private MetaService metaService;
+    
     public DashboardResponse getDadosDashboard(java.util.List<String> filiais, String vendedor, 
                                              LocalDate dataInicio, LocalDate dataFim, boolean agruparPorMes, String tipoPeriodo) {
         
@@ -67,6 +70,13 @@ public class VendaService {
         // Obter listas para filtros
         List<String> todasFiliais = vendaRepository.findDistinctFiliais();
         List<String> vendedores = vendaRepository.findDistinctVendedores();
+        
+        // Buscar metas do banco de dados para as filiais selecionadas
+        Map<String, BigDecimal> metas = new HashMap<>();
+        if (filiais != null && !filiais.isEmpty()) {
+            metas = metaService.obterMetasPorFiliaisEPeriodo(filiais, dataInicio, dataFim);
+            logger.debug("Metas obtidas do banco de dados: {}", metas);
+        }
 
         // Debug logs
         logger.debug("getDadosDashboard params filiais={}, vendedor={}, dataInicio={}, dataFim={}, agruparPorMes={}, tipoPeriodo={}",
@@ -85,6 +95,7 @@ public class VendaService {
         DashboardResponse response = new DashboardResponse(totalVendas, numeroVendas, ticketMedio, maxResponse, 
                                                           dadosGrafico, top10Vendedores, todasFiliais, vendedores);
         response.setComparison(comparison);
+        response.setMetas(metas);
         
         return response;
     }
