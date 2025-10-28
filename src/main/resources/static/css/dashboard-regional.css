@@ -4,20 +4,47 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: auto;
+}
+
+/* Apenas telas 1920px+ (Full HD+) têm overflow hidden */
+@media (min-width: 1920px) {
+    html {
+        overflow: hidden;
+        height: 100vh;
+    }
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     color: #fff;
     padding: 20px;
-    height: 100vh;
-    overflow: hidden;
+    height: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
 }
 
+/* Apenas telas 1920px+ (Full HD+) têm 100vh sem scroll */
+@media (min-width: 1920px) {
+    body {
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    .container {
+        height: 100%;
+    }
+}
+
 .container {
     width: 100%;
-    height: 100%;
+    height: auto;
     margin: 0;
     display: flex;
     flex-direction: column;
@@ -177,6 +204,16 @@ body {
     flex: 1;
     overflow: hidden;
     transition: opacity 0.5s ease-in-out;
+    min-height: 0; /* Fix para flexbox com scroll */
+}
+
+/* Suporte para scroll em touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .vendedores-chart {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+    }
 }
 
 .vendedores-chart.fade-out {
@@ -360,6 +397,54 @@ body {
     }
 }
 
+/* Media query para 720p e resoluções menores (até 1366px) */
+@media (max-width: 1366px) {
+    .container {
+        gap: 15px;
+    }
+    
+    .unidades-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .top-vendedores-section,
+    .unidades-section {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+    
+    .vendedor-item {
+        padding: 5px 10px;
+        gap: 8px;
+    }
+    
+    .vendedor-posicao {
+        font-size: 12px;
+        min-width: 26px;
+    }
+    
+    .vendedor-nome {
+        font-size: 11px;
+    }
+    
+    .vendedor-valor {
+        font-size: 11px;
+        min-width: 85px;
+    }
+    
+    .vendedor-barra-container {
+        height: 16px;
+        border-radius: 8px;
+    }
+    
+    .unidade-row {
+        grid-template-columns: auto 1fr auto;
+        gap: 15px;
+        padding: 15px;
+    }
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .main-gauges-section {
@@ -376,9 +461,58 @@ body {
     }
 }
 
+/* Para resoluções menores (720p até 1280px) - habilita scroll */
+@media (max-width: 1279px) {
+    body {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    .container {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+    }
+    
+    .unidades-container {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+    
+    .top-vendedores-section,
+    .unidades-section {
+        flex: 1 1 100%;
+        overflow: visible;
+        height: auto;
+        max-height: none;
+    }
+    
+    .vendedores-chart {
+        overflow: visible;
+        max-height: none;
+        height: auto;
+    }
+}
+
+/* Mobile (768px para baixo) */
 @media (max-width: 768px) {
     body {
         padding: 10px;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    .container {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
     }
     
     .header h1 {
@@ -414,9 +548,29 @@ body {
         padding: 20px;
     }
     
-    /* Permitir scroll em mobile para vendedores */
+    /* Em mobile, remover restrições de altura para scroll da página inteira */
     .vendedores-chart {
-        overflow-y: auto;
-        max-height: calc(100vh - 200px);
+        overflow: visible;
+        max-height: none;
+        height: auto;
+    }
+    
+    .top-vendedores-section {
+        overflow: visible;
+        height: auto;
+        max-height: none;
+        flex: 1 1 100%;
+    }
+    
+    .unidades-container {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+    
+    .unidades-section {
+        flex: 1 1 100%;
+        overflow: visible;
+        height: auto;
     }
 }

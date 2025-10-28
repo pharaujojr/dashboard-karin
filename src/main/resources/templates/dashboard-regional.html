@@ -4,8 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Regional - Vendas</title>
-    <link rel="stylesheet" th:href="@{/css/dashboard-regional.css}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-regional.css(v=${#dates.format(#dates.createNow(), 'yyyyMMddHHmmss')})}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        // Força scroll IMEDIATAMENTE antes de qualquer coisa carregar
+        (function() {
+            function forcarScroll() {
+                var largura = window.innerWidth;
+                console.log('INLINE SCRIPT - Largura:', largura);
+                if (largura < 1280) {
+                    console.log('INLINE SCRIPT - Forçando scroll!');
+                    var html = document.documentElement;
+                    var body = document.body;
+                    
+                    // Força no HTML
+                    html.style.setProperty('overflow-y', 'scroll', 'important');
+                    html.style.setProperty('overflow-x', 'hidden', 'important');
+                    html.style.setProperty('height', 'auto', 'important');
+                    html.style.setProperty('max-height', 'none', 'important');
+                    
+                    // Força no BODY também
+                    if (body) {
+                        body.style.setProperty('overflow-y', 'scroll', 'important');
+                        body.style.setProperty('overflow-x', 'hidden', 'important');
+                        body.style.setProperty('height', 'auto', 'important');
+                        body.style.setProperty('max-height', 'none', 'important');
+                    }
+                }
+            }
+            // Executa a cada 100ms até funcionar (máximo 10 vezes)
+            var tentativas = 0;
+            var intervalo = setInterval(function() {
+                forcarScroll();
+                tentativas++;
+                if (tentativas >= 10) {
+                    clearInterval(intervalo);
+                }
+            }, 100);
+            
+            // Também executa nos eventos normais
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', forcarScroll);
+            } else {
+                forcarScroll();
+            }
+            window.addEventListener('resize', forcarScroll);
+            window.addEventListener('load', forcarScroll);
+        })();
+    </script>
+    </script>
 </head>
 <body>
     <div class="container">
@@ -218,6 +265,33 @@
                     <canvas id="gauge-unidade-sinop" width="140" height="100"></canvas>
                     <div class="gauge-label">
                         <span id="meta-unidade-sinop">Meta: R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nova Mutum -->
+            <div class="unidade-row" id="unidade-novamutum">
+                <div class="unidade-info">
+                    <h4>Nova Mutum</h4>
+                </div>
+                <div class="unidade-metricas">
+                    <div class="metric">
+                        <span class="metric-label">Nº Vendas:</span>
+                        <span class="metric-value" id="vendas-novamutum">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Ticket Médio:</span>
+                        <span class="metric-value" id="ticket-novamutum">R$ 0,00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total:</span>
+                        <span class="metric-value" id="total-unidade-novamutum">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="unidade-gauge">
+                    <canvas id="gauge-unidade-novamutum" width="140" height="100"></canvas>
+                    <div class="gauge-label">
+                        <span id="meta-unidade-novamutum">Meta: R$ 0,00</span>
                     </div>
                 </div>
             </div>

@@ -31,8 +31,8 @@ const UNIDADES_CONFIG = {
     },
     matoGrosso: {
         nome: 'Mato Grosso',
-        filiais: ['Matupá', 'Sorriso', 'Lucas do Rio Verde', 'Sinop'],
-        meta: META_PADRAO * 4
+        filiais: ['Matupá', 'Sorriso', 'Lucas do Rio Verde', 'Sinop', 'Nova Mutum'],
+        meta: META_PADRAO * 5
     },
     matupa: {
         nome: 'Matupá',
@@ -53,11 +53,16 @@ const UNIDADES_CONFIG = {
         nome: 'Sinop',
         filiais: ['Sinop'],
         meta: META_PADRAO
+    },
+    novamutum: {
+        nome: 'Nova Mutum',
+        filiais: ['Nova Mutum'],
+        meta: META_PADRAO
     }
 };
 
 // Array com IDs das unidades individuais para paginação
-const UNIDADES_INDIVIDUAIS = ['jaragua', 'matupa', 'sorriso', 'lucas', 'sinop'];
+const UNIDADES_INDIVIDUAIS = ['jaragua', 'matupa', 'sorriso', 'lucas', 'sinop', 'novamutum'];
 
 // Função para mostrar página específica
 function mostrarPagina(numeroPagina) {
@@ -153,6 +158,12 @@ async function carregarDados() {
         if (dadosMudaram('sinop', dadosSinop)) {
             atualizarGaugeUnidade('sinop', dadosSinop, dadosSinop.meta);
             ultimosDados['sinop'] = dadosSinop;
+        }
+        
+        const dadosNovaMutum = await buscarDadosUnidade(['Nova Mutum']);
+        if (dadosMudaram('novamutum', dadosNovaMutum)) {
+            atualizarGaugeUnidade('novamutum', dadosNovaMutum, dadosNovaMutum.meta);
+            ultimosDados['novamutum'] = dadosNovaMutum;
         }
         
         // Buscar top 10 vendedores de todas as filiais usando o endpoint correto
@@ -576,4 +587,36 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Iniciar rotação de páginas
     iniciarRotacaoPaginas();
+    
+    // Controlar scroll - desabilita apenas em 1920px+
+    controlarScrollPorResolucao();
+    
+    // Atualizar quando a janela for redimensionada
+    window.addEventListener('resize', controlarScrollPorResolucao);
 });
+
+// Função para controlar scroll - DESABILITA apenas em 1920px ou maior
+function controlarScrollPorResolucao() {
+    const largura = window.innerWidth;
+    console.log('Largura da janela:', largura);
+    
+    if (largura >= 1920) {
+        // 1920px ou maior (1080p+): SEM SCROLL
+        console.log('Resolução >= 1920px: DESABILITANDO SCROLL');
+        document.documentElement.style.overflow = 'hidden';
+        document.documentElement.style.height = '100vh';
+        document.body.style.overflow = 'hidden';
+        document.body.style.height = '100vh';
+    } else {
+        // Menor que 1920px (720p, mobile, etc): COM SCROLL
+        console.log('Resolução < 1920px: HABILITANDO SCROLL');
+        document.documentElement.style.overflow = 'visible';
+        document.documentElement.style.overflowY = 'auto';
+        document.documentElement.style.overflowX = 'hidden';
+        document.documentElement.style.height = 'auto';
+        document.body.style.overflow = 'visible';
+        document.body.style.overflowY = 'auto';
+        document.body.style.overflowX = 'hidden';
+        document.body.style.height = 'auto';
+    }
+}
