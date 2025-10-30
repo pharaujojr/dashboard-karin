@@ -414,6 +414,13 @@ function atualizarComparacao(elementoId, variacao) {
 
 // Atualizar dashboard com novos dados
 function atualizarDashboard(dados, tipoPeriodo = 'dia') {
+    // PROTEÇÃO: Evitar regressão de dados - não atualizar se total de vendas diminuiu
+    if (ultimosDados && dados.totalVendas < ultimosDados.totalVendas) {
+        console.warn('[DASHBOARD] ⚠️ Total de vendas menor que o anterior - atualizaç��o bloqueada');
+        console.warn('Anterior:', formatarMoeda(ultimosDados.totalVendas), 'Novo:', formatarMoeda(dados.totalVendas));
+        return; // Não atualiza nada
+    }
+    
     // Verificar se os dados mudaram
     const dadosMudaram = !ultimosDados || JSON.stringify(ultimosDados) !== JSON.stringify(dados);
     
