@@ -408,8 +408,13 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
     const graficoMudou = !ultimosDados || 
         JSON.stringify(ultimosDados.dadosGrafico) !== JSON.stringify(dados.dadosGrafico);
     
-    const topVendedoresMudou = !ultimosDados ||
-        JSON.stringify(ultimosDados.top10Vendedores) !== JSON.stringify(dados.top10Vendedores);
+    // Comparação específica para top vendedores (apenas nome e total)
+    const topVendedoresMudou = !ultimosDados || !ultimosDados.top10Vendedores ||
+        ultimosDados.top10Vendedores.length !== dados.top10Vendedores.length ||
+        ultimosDados.top10Vendedores.some((v, i) => 
+            v.nome !== dados.top10Vendedores[i]?.nome || 
+            v.total !== dados.top10Vendedores[i]?.total
+        );
     
     // Função auxiliar para atualizar elemento com verificação
     function atualizarElemento(id, texto) {
@@ -464,7 +469,11 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
     // Atualizar gráfico de top vendedores apenas se mudou
     if (topVendedoresMudou) {
         console.log('[DASHBOARD] Top vendedores mudaram, redesenhando...');
+        console.log('Anterior:', ultimosDados?.top10Vendedores?.map(v => ({nome: v.nome, total: v.total})));
+        console.log('Novo:', dados.top10Vendedores?.map(v => ({nome: v.nome, total: v.total})));
         atualizarGraficoTopVendedores(dados.top10Vendedores || []);
+    } else {
+        console.log('[DASHBOARD] Top vendedores NÃO mudaram, mantendo gráfico');
     }
 
     // Animação de entrada apenas na primeira carga
@@ -919,17 +928,10 @@ function atualizarGraficoAcumulado(dadosGrafico, tipoPeriodo) {
     });
 }
 
+// Função desabilitada - tela de loading removida
 function mostrarLoading(mostrar) {
-    const loading = document.getElementById('loading');
-    if (loading) {
-        if (mostrar) {
-            loading.classList.remove('hidden');
-        } else {
-            loading.classList.add('hidden');
-        }
-    } else {
-        console.warn("Elemento 'loading' não encontrado");
-    }
+    // Não faz nada - loading removido do dashboard
+    return;
 }
 
 function mostrarNotificacao(mensagem, tipo = 'info') {
