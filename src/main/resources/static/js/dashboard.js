@@ -7,6 +7,11 @@ const API_BASE_URL = '/api';
 const REFRESH_INTERVAL = 15000; // 15 segundos em milissegundos
 let ultimosDados = null; // Cache dos últimos dados recebidos
 
+// Variáveis de paginação do ranking
+let todosVendedores = []; // Todos os vendedores
+let paginaAtualRanking = 1;
+const VENDEDORES_POR_PAGINA = 10;
+
 // Inicialização da página
 document.addEventListener('DOMContentLoaded', function() {
     carregarFiltros();
@@ -75,6 +80,19 @@ function configurarEventos() {
     });
     adicionarEvento('data-fim', 'keypress', function(e) {
         if (e.key === 'Enter') filtrarDados();
+    });
+    
+    // Botões de paginação do ranking
+    adicionarEvento('prev-page-btn', 'click', function() {
+        if (paginaAtualRanking > 1) {
+            mudarPaginaRanking(paginaAtualRanking - 1);
+        }
+    });
+    adicionarEvento('next-page-btn', 'click', function() {
+        const totalPaginas = Math.ceil(todosVendedores.length / VENDEDORES_POR_PAGINA);
+        if (paginaAtualRanking < totalPaginas) {
+            mudarPaginaRanking(paginaAtualRanking + 1);
+        }
     });
 }
 
@@ -602,16 +620,47 @@ function atualizarGrafico(dadosGrafico, tipoPeriodo = 'dia') {
 
 // Atualizar gráfico de top vendedores
 function atualizarGraficoTopVendedores(topVendedores) {
+    // Armazenar todos os vendedores
+    todosVendedores = topVendedores || [];
+    
+    // Resetar para página 1 quando receber novos dados
+    paginaAtualRanking = 1;
+    
+    // Renderizar a primeira página
+    renderizarPaginaRanking();
+}
+
+function renderizarPaginaRanking() {
     const ctx = document.getElementById('topVendedoresChart').getContext('2d');
+    
+    // Adicionar classe de animação
+    const chartContainer = document.querySelector('.top-vendedores-chart');
+    if (chartContainer) {
+        chartContainer.classList.add('chart-transitioning');
+        setTimeout(() => {
+            chartContainer.classList.remove('chart-transitioning');
+        }, 600);
+    }
 
     // Destruir gráfico anterior se existir
     if (topVendedoresChart) {
         topVendedoresChart.destroy();
     }
 
-    const labels = topVendedores.map(item => item.nome ? item.nome.toUpperCase() : 'SEM NOME');
-    const valores = topVendedores.map(item => parseFloat(item.total) || 0);
-    const variacoes = topVendedores.map(item => item.variacao || 0);
+    // Calcular índices da página atual
+    const inicio = (paginaAtualRanking - 1) * VENDEDORES_POR_PAGINA;
+    const fim = inicio + VENDEDORES_POR_PAGINA;
+    const vendedoresPagina = todosVendedores.slice(inicio, fim);
+    
+    // Adicionar posição aos labels (ex: "1º JOÃO SILVA")
+    const labels = vendedoresPagina.map((item, index) => {
+        const posicao = inicio + index + 1;
+        const nome = item.nome ? item.nome.toUpperCase() : 'SEM NOME';
+        return `${posicao}º ${nome}`;
+    });
+    
+    const valores = vendedoresPagina.map(item => parseFloat(item.total) || 0);
+    const variacoes = vendedoresPagina.map(item => item.variacao || 0);
 
     topVendedoresChart = new Chart(ctx, {
         type: 'bar',
@@ -673,12 +722,12 @@ function atualizarGraficoTopVendedores(topVendedores) {
             }
         ],
         options: {
-            indexAxis: 'y', // This makes it horizontal - MOVED HERE
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             layout: {
                 padding: {
-                    right: 120 // Extra space for value labels and comparison at the end of bars
+                    right: 120
                 }
             },
             plugins: {
@@ -693,7 +742,7 @@ function atualizarGraficoTopVendedores(topVendedores) {
                     borderWidth: 1,
                     callbacks: {
                         label: function(context) {
-                            const value = context.parsed.x; // For horizontal bars
+                            const value = context.parsed.x;
                             const index = context.dataIndex;
                             const variacao = variacoes[index];
                             
@@ -709,7 +758,7 @@ function atualizarGraficoTopVendedores(topVendedores) {
             },
             scales: {
                 x: {
-                    display: false, // Hide X-axis, values are shown at bar ends
+                    display: false,
                     grid: {
                         display: false
                     },
@@ -732,6 +781,45 @@ function atualizarGraficoTopVendedores(topVendedores) {
             }
         }
     });
+    
+    // Atualizar controles de paginação
+    atualizarControlesPaginacao();
+}
+
+function mudarPaginaRanking(novaPagina) {
+    paginaAtualRanking = novaPagina;
+    renderizarPaginaRanking();
+}
+
+function atualizarControlesPaginacao() {
+    const totalPaginas = Math.ceil(todosVendedores.length / VENDEDORES_POR_PAGINA);
+    
+    const prevBtn = document.getElementById('prev-page-btn');
+    const nextBtn = document.getElementById('next-page-btn');
+    const paginationInfo = document.getElementById('pagination-info');
+    const paginationContainer = document.getElementById('ranking-pagination');
+    
+    // Mostrar/esconder paginação
+    if (paginationContainer) {
+        if (totalPaginas <= 1) {
+            paginationContainer.style.display = 'none';
+        } else {
+            paginationContainer.style.display = 'flex';
+        }
+    }
+    
+    // Atualizar botões
+    if (prevBtn) {
+        prevBtn.disabled = paginaAtualRanking === 1;
+    }
+    if (nextBtn) {
+        nextBtn.disabled = paginaAtualRanking >= totalPaginas;
+    }
+    
+    // Atualizar texto
+    if (paginationInfo) {
+        paginationInfo.textContent = `Página ${paginaAtualRanking} de ${totalPaginas}`;
+    }
 }
 
 // Utilitários
