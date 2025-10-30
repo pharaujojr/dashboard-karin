@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Vendas</title>
     <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/dashboard-additions.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -19,13 +20,26 @@
         <!-- Filtros -->
         <section class="filters-section">
             <div class="filters-container">
-                <div class="filter-group">
-                    <label for="filtro-unidade">
-                        <i class="fas fa-building"></i> Unidade
+                <div class="filter-group filter-group-unidades">
+                    <label>
+                        <i class="fas fa-building"></i> Unidades
                     </label>
-                    <select id="filtro-unidade" class="filter-select">
-                        <option value="">Todas as unidades</option>
-                    </select>
+                    <div class="dropdown-checkbox">
+                        <button type="button" class="dropdown-toggle" id="dropdown-unidades-toggle">
+                            <span id="unidades-selecionadas-texto">Todas as unidades</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu" id="dropdown-unidades-menu">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="unidade-todas" checked>
+                                <label for="unidade-todas">Todas as unidades</label>
+                            </div>
+                            <hr class="dropdown-divider">
+                            <div id="lista-unidades-checkbox">
+                                <!-- Checkboxes serão inseridos aqui via JavaScript -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="filter-group">
@@ -120,8 +134,8 @@
             </div>
         </section>
 
-        <!-- Seção MAX -->
-        <section class="max-section">
+        <!-- Seção MAX / Indicadores do Vendedor -->
+        <section class="max-section" id="section-destaques">
             <h2 class="section-title">
                 <i class="fas fa-trophy"></i> Destaques do Período
             </h2>
@@ -143,6 +157,42 @@
                     </div>
                 </div>
             </div>
+        </section>
+        
+        <!-- Seção de Indicadores do Vendedor (hidden por padrão) -->
+        <section class="vendedor-section hidden" id="section-vendedor">
+            <h2 class="section-title">
+                <i class="fas fa-user-chart"></i> Indicadores de <span id="vendedor-nome-titulo"></span>
+            </h2>
+            <div class="vendedor-indicators-grid">
+                <div class="indicator-card">
+                    <div class="indicator-icon"><i class="fas fa-calendar-year"></i></div>
+                    <div class="indicator-content">
+                        <h4>Vendas no Ano</h4>
+                        <p class="indicator-value" id="vendedor-ano-valor">R$ 0,00</p>
+                        <span class="indicator-label" id="vendedor-ano-vendas">0 vendas</span>
+                    </div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <div class="indicator-content">
+                        <h4>Vendas no Mês</h4>
+                        <p class="indicator-value" id="vendedor-mes-valor">R$ 0,00</p>
+                        <span class="indicator-label" id="vendedor-mes-vendas">0 vendas</span>
+                    </div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-icon"><i class="fas fa-calendar-week"></i></div>
+                    <div class="indicator-content">
+                        <h4>Vendas na Semana</h4>
+                        <p class="indicator-value" id="vendedor-semana-valor">R$ 0,00</p>
+                        <span class="indicator-label" id="vendedor-semana-vendas">0 vendas</span>
+                    </div>
+                </div>
+            </div>
+            <div class="vendedor-chart-container">
+                <h4><i class="fas fa-chart-bar"></i> Desempenho dos Últimos 12 Meses</h4>
+                <canvas id="vendedorIndicadoresChart"></canvas>
             </div>
         </section>
 
@@ -174,5 +224,6 @@
     </div>
 
     <script src="/js/dashboard.js?v=4"></script>
+    <script src="/js/dashboard-extensions.js"></script>
 </body>
 </html>

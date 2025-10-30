@@ -278,7 +278,7 @@ async function filtrarDados() {
         return;
     }
 
-    mostrarLoading(true);
+    // mostrarLoading(true); // Removido - tela de loading desabilitada
 
     try {
         const params = new URLSearchParams({
@@ -286,7 +286,17 @@ async function filtrarDados() {
             dataFim: dataFim
         });
 
-        if (filial) params.append('filial', filial);
+        // Usar unidades selecionadas se a função existir (dashboard-extensions.js)
+        if (typeof obterUnidadesSelecionadas === 'function') {
+            const unidadesSelecionadas = obterUnidadesSelecionadas();
+            if (unidadesSelecionadas && unidadesSelecionadas.length > 0) {
+                unidadesSelecionadas.forEach(unidade => params.append('filial', unidade));
+            }
+        } else if (filial) {
+            // Fallback para o select antigo
+            params.append('filial', filial);
+        }
+        
         if (vendedor) params.append('vendedor', vendedor);
         
         // Se o período for "ano" ou "trimestre", agrupar por mês
@@ -315,7 +325,7 @@ async function filtrarDados() {
         console.error('Erro ao filtrar dados:', error);
         mostrarNotificacao('Erro ao carregar dados do dashboard', 'error');
     } finally {
-        mostrarLoading(false);
+        // mostrarLoading(false); // Removido - tela de loading desabilitada
         
         // Remover animação do indicador
         const refreshIndicator = document.querySelector('.auto-refresh-indicator');
@@ -389,6 +399,18 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
     // Verificar se os dados mudaram
     const dadosMudaram = !ultimosDados || JSON.stringify(ultimosDados) !== JSON.stringify(dados);
     
+    // Verificações específicas para otimizar atualizações
+    const metricasMudaram = !ultimosDados || 
+        ultimosDados.totalVendas !== dados.totalVendas ||
+        ultimosDados.numeroVendas !== dados.numeroVendas ||
+        ultimosDados.ticketMedio !== dados.ticketMedio;
+    
+    const graficoMudou = !ultimosDados || 
+        JSON.stringify(ultimosDados.dadosGrafico) !== JSON.stringify(dados.dadosGrafico);
+    
+    const topVendedoresMudou = !ultimosDados ||
+        JSON.stringify(ultimosDados.top10Vendedores) !== JSON.stringify(dados.top10Vendedores);
+    
     // Função auxiliar para atualizar elemento com verificação
     function atualizarElemento(id, texto) {
         const elemento = document.getElementById(id);
@@ -397,49 +419,61 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
         }
     }
 
-    // Atualizar métricas principais (sempre atualiza textos, é rápido)
-    atualizarElemento('total-vendas', formatarMoeda(dados.totalVendas));
-    atualizarElemento('numero-vendas', dados.numeroVendas || '0');
-    atualizarElemento('ticket-medio', formatarMoeda(dados.ticketMedio));
-    
-    // Atualizar indicadores de comparação
-    atualizarComparacao('comparison-total-vendas', dados.comparison?.totalVendasVariacao);
-    atualizarComparacao('comparison-numero-vendas', dados.comparison?.numeroVendasVariacao);
-    atualizarComparacao('comparison-ticket-medio', dados.comparison?.ticketMedioVariacao);
+    // Atualizar métricas principais apenas se mudaram
+    if (metricasMudaram) {
+        atualizarElemento('total-vendas', formatarMoeda(dados.totalVendas));
+        atualizarElemento('numero-vendas', dados.numeroVendas || '0');
+        atualizarElemento('ticket-medio', formatarMoeda(dados.ticketMedio));
+        
+        // Atualizar indicadores de comparação
+        atualizarComparacao('comparison-total-vendas', dados.comparison?.totalVendasVariacao);
+        atualizarComparacao('comparison-numero-vendas', dados.comparison?.numeroVendasVariacao);
+        atualizarComparacao('comparison-ticket-medio', dados.comparison?.ticketMedioVariacao);
+    }
 
     // Atualizar seção MAX
     if (dados.maxResponse) {
-        atualizarElemento('maior-venda-valor', formatarMoeda(dados.maxResponse.maiorVenda));
+        const maxMudou = !ultimosDados || !ultimosDados.maxResponse ||
+            ultimosDados.maxResponse.maiorVenda !== dados.maxResponse.maiorVenda;
         
-        // Build the details text with vendor and client
-        let detailsText = '';
-        if (dados.maxResponse.vendedorMaiorVenda && dados.maxResponse.clienteMaiorVenda) {
-            detailsText = `${dados.maxResponse.vendedorMaiorVenda.toUpperCase()} • ${dados.maxResponse.clienteMaiorVenda.toUpperCase()}`;
-        } else if (dados.maxResponse.vendedorMaiorVenda) {
-            detailsText = `Vendedor: ${dados.maxResponse.vendedorMaiorVenda.toUpperCase()}`;
-        } else if (dados.maxResponse.clienteMaiorVenda) {
-            detailsText = `Cliente: ${dados.maxResponse.clienteMaiorVenda.toUpperCase()}`;
-        } else {
-            detailsText = '-';
+        if (maxMudou) {
+            atualizarElemento('maior-venda-valor', formatarMoeda(dados.maxResponse.maiorVenda));
+            
+            // Build the details text with vendor and client
+            let detailsText = '';
+            if (dados.maxResponse.vendedorMaiorVenda && dados.maxResponse.clienteMaiorVenda) {
+                detailsText = `${dados.maxResponse.vendedorMaiorVenda.toUpperCase()} • ${dados.maxResponse.clienteMaiorVenda.toUpperCase()}`;
+            } else if (dados.maxResponse.vendedorMaiorVenda) {
+                detailsText = `Vendedor: ${dados.maxResponse.vendedorMaiorVenda.toUpperCase()}`;
+            } else if (dados.maxResponse.clienteMaiorVenda) {
+                detailsText = `Cliente: ${dados.maxResponse.clienteMaiorVenda.toUpperCase()}`;
+            } else {
+                detailsText = '-';
+            }
+            atualizarElemento('maior-venda-vendedor', detailsText);
         }
-        atualizarElemento('maior-venda-vendedor', detailsText);
     }
 
-    // Apenas redesenhar gráficos se os dados mudaram
-    if (dadosMudaram) {
-        // Atualizar gráfico
+    // Atualizar gráfico de vendas apenas se mudou
+    if (graficoMudou) {
+        console.log('[DASHBOARD] Dados do gráfico mudaram, redesenhando...');
         atualizarGrafico(dados.dadosGrafico || [], tipoPeriodo);
-        
-        // Atualizar gráfico acumulado
         atualizarGraficoAcumulado(dados.dadosGrafico || [], tipoPeriodo);
-        
-        // Atualizar gráfico de top vendedores
+    }
+    
+    // Atualizar gráfico de top vendedores apenas se mudou
+    if (topVendedoresMudou) {
+        console.log('[DASHBOARD] Top vendedores mudaram, redesenhando...');
         atualizarGraficoTopVendedores(dados.top10Vendedores || []);
+    }
 
-        // Animação de entrada
+    // Animação de entrada apenas na primeira carga
+    if (!ultimosDados) {
         animarCartoes();
-        
-        // Armazenar dados atuais
+    }
+    
+    // Armazenar dados atuais
+    if (dadosMudaram) {
         ultimosDados = JSON.parse(JSON.stringify(dados));
     }
 }
@@ -679,7 +713,7 @@ function atualizarGraficoTopVendedores(topVendedores) {
                     ticks: {
                         color: '#374151',
                         font: {
-                            size: 12,
+                            size: 10,
                             weight: '500'
                         },
                         maxRotation: 0,
