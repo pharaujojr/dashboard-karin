@@ -331,7 +331,13 @@ async function filtrarDados() {
         console.log('[FETCH] URL:', url);
         console.log('[FETCH] Parâmetros:', Object.fromEntries(params));
         
-        const response = await fetch(url);
+        let response;
+        try {
+            response = await fetch(url);
+        } catch (fetchError) {
+            console.error('[FETCH] Erro de rede:', fetchError);
+            throw new Error(`Erro de conexão: ${fetchError.message}. Verifique se o servidor está rodando.`);
+        }
         
         console.log('[FETCH] Response status:', response.status);
         console.log('[FETCH] Response ok:', response.ok);
