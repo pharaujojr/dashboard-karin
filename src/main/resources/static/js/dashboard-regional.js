@@ -198,15 +198,6 @@ function dadosMudaram(chave, novosDados) {
     
     const dadosAntigos = ultimosDados[chave];
     
-    // PROTEÇÃO: Evitar regressão de dados - bloquear se total de vendas diminuiu
-    if (dadosAntigos.totalVendas !== undefined && novosDados.totalVendas !== undefined) {
-        if (novosDados.totalVendas < dadosAntigos.totalVendas) {
-            console.warn(`[REGIONAL] ⚠️ Total de vendas menor que o anterior para ${chave} - atualização bloqueada`);
-            console.warn('Anterior:', formatarMoeda(dadosAntigos.totalVendas), 'Novo:', formatarMoeda(novosDados.totalVendas));
-            return false; // Não atualiza
-        }
-    }
-    
     // Comparar objetos de forma simples
     return JSON.stringify(dadosAntigos) !== JSON.stringify(novosDados);
 }
