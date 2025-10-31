@@ -327,13 +327,23 @@ async function filtrarDados() {
             params.append('tipoPeriodo', tipoPeriodo);
         }
 
-        const response = await fetch(`${API_BASE_URL}/dashboard?${params}`);
+        const url = `${API_BASE_URL}/dashboard?${params}`;
+        console.log('[FETCH] URL:', url);
+        console.log('[FETCH] Parâmetros:', Object.fromEntries(params));
+        
+        const response = await fetch(url);
+        
+        console.log('[FETCH] Response status:', response.status);
+        console.log('[FETCH] Response ok:', response.ok);
         
         if (!response.ok) {
-            throw new Error('Erro ao buscar dados do dashboard');
+            const errorText = await response.text();
+            console.error('[FETCH] Error response:', errorText);
+            throw new Error(`Erro ao buscar dados do dashboard (${response.status}): ${errorText}`);
         }
 
         const dados = await response.json();
+        console.log('[FETCH] Dados recebidos:', dados);
         atualizarDashboard(dados, tipoPeriodo);
         
         // Iniciar auto-refresh após carregar dados com sucesso
@@ -415,10 +425,15 @@ function atualizarComparacao(elementoId, variacao) {
 // Atualizar dashboard com novos dados
 function atualizarDashboard(dados, tipoPeriodo = 'dia') {
     // PROTEÇÃO: Evitar regressão de dados - não atualizar se total de vendas diminuiu
-    if (ultimosDados && dados.totalVendas < ultimosDados.totalVendas) {
-        console.warn('[DASHBOARD] ⚠️ Total de vendas menor que o anterior - atualizaç��o bloqueada');
-        console.warn('Anterior:', formatarMoeda(ultimosDados.totalVendas), 'Novo:', formatarMoeda(dados.totalVendas));
-        return; // Não atualiza nada
+    if (ultimosDados && dados && dados.totalVendas !== undefined && ultimosDados.totalVendas !== undefined) {
+        const totalVendasNovo = parseFloat(dados.totalVendas) || 0;
+        const totalVendasAntigo = parseFloat(ultimosDados.totalVendas) || 0;
+        
+        if (totalVendasNovo < totalVendasAntigo) {
+            console.warn('[DASHBOARD] ⚠️ Total de vendas menor que o anterior - atualização bloqueada');
+            console.warn('Anterior:', formatarMoeda(totalVendasAntigo), 'Novo:', formatarMoeda(totalVendasNovo));
+            return; // Não atualiza nada
+        }
     }
     
     // Verificar se os dados mudaram
