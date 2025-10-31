@@ -424,7 +424,10 @@ public class VendaService {
                 if (dataFim.getMonth() == hoje.getMonth() && 
                     dataFim.getYear() == hoje.getYear() &&
                     dataFim.getDayOfMonth() == dataFim.lengthOfMonth()) {
-                    dataFimAnterior = dataInicio.minusMonths(1).withDayOfMonth(hoje.getDayOfMonth());
+                    // Usar o menor valor entre o dia atual e o último dia do mês anterior
+                    LocalDate mesAnterior = dataInicio.minusMonths(1);
+                    int diaParaUsar = Math.min(hoje.getDayOfMonth(), mesAnterior.lengthOfMonth());
+                    dataFimAnterior = mesAnterior.withDayOfMonth(diaParaUsar);
                 } else {
                     dataFimAnterior = dataFim.minusMonths(1);
                 }
