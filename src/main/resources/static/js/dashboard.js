@@ -6,6 +6,7 @@ let autoRefreshInterval;
 const API_BASE_URL = '/api';
 const REFRESH_INTERVAL = 15000; // 15 segundos em milissegundos
 let ultimosDados = null; // Cache dos últimos dados recebidos
+let ultimosFiltros = null; // Cache dos filtros usados na última requisição
 
 // Variáveis de paginação do ranking
 let todosVendedores = []; // Todos os vendedores
@@ -305,15 +306,27 @@ async function filtrarDados() {
         });
 
         // Usar unidades selecionadas se a função existir (dashboard-extensions.js)
+        let unidadesAtuais = [];
         if (typeof obterUnidadesSelecionadas === 'function') {
             const unidadesSelecionadas = obterUnidadesSelecionadas();
             if (unidadesSelecionadas && unidadesSelecionadas.length > 0) {
                 unidadesSelecionadas.forEach(unidade => params.append('filial', unidade));
+                unidadesAtuais = unidadesSelecionadas;
             }
         } else if (filial) {
             // Fallback para o select antigo
             params.append('filial', filial);
+            unidadesAtuais = [filial];
         }
+        
+        // Criar objeto com filtros atuais para comparação
+        const filtrosAtuais = {
+            unidades: unidadesAtuais.sort().join(','),
+            vendedor: vendedor || '',
+            dataInicio: dataInicio,
+            dataFim: dataFim,
+            tipoPeriodo: tipoPeriodo
+        };
         
         if (vendedor) params.append('vendedor', vendedor);
         
@@ -350,7 +363,7 @@ async function filtrarDados() {
 
         const dados = await response.json();
         console.log('[FETCH] Dados recebidos:', dados);
-        atualizarDashboard(dados, tipoPeriodo);
+        atualizarDashboard(dados, tipoPeriodo, filtrosAtuais);
         
         // Iniciar auto-refresh após carregar dados com sucesso
         iniciarAutoRefresh();
@@ -429,9 +442,13 @@ function atualizarComparacao(elementoId, variacao) {
 }
 
 // Atualizar dashboard com novos dados
-function atualizarDashboard(dados, tipoPeriodo = 'dia') {
-    // PROTEÇÃO: Evitar regressão de dados - não atualizar se total de vendas diminuiu
-    if (ultimosDados && dados && dados.totalVendas !== undefined && ultimosDados.totalVendas !== undefined) {
+function atualizarDashboard(dados, tipoPeriodo = 'dia', filtrosAtuais = null) {
+    // Verificar se os filtros mudaram
+    const filtrosMudaram = !ultimosFiltros || 
+        JSON.stringify(ultimosFiltros) !== JSON.stringify(filtrosAtuais);
+    
+    // PROTEÇÃO: Evitar regressão de dados - MAS APENAS se os filtros NÃO mudaram
+    if (!filtrosMudaram && ultimosDados && dados && dados.totalVendas !== undefined && ultimosDados.totalVendas !== undefined) {
         const totalVendasNovo = parseFloat(dados.totalVendas) || 0;
         const totalVendasAntigo = parseFloat(ultimosDados.totalVendas) || 0;
         
@@ -440,6 +457,12 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
             console.warn('Anterior:', formatarMoeda(totalVendasAntigo), 'Novo:', formatarMoeda(totalVendasNovo));
             return; // Não atualiza nada
         }
+    }
+    
+    if (filtrosMudaram) {
+        console.log('[DASHBOARD] ℹ️ Filtros mudaram - permitindo atualização');
+        console.log('Filtros anteriores:', ultimosFiltros);
+        console.log('Filtros atuais:', filtrosAtuais);
     }
     
     // Verificar se os dados mudaram
@@ -527,9 +550,10 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia') {
         animarCartoes();
     }
     
-    // Armazenar dados atuais
+    // Armazenar dados e filtros atuais
     if (dadosMudaram) {
         ultimosDados = JSON.parse(JSON.stringify(dados));
+        ultimosFiltros = filtrosAtuais ? JSON.parse(JSON.stringify(filtrosAtuais)) : null;
     }
 }
 
