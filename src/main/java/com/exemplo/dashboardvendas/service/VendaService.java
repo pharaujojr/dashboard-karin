@@ -55,9 +55,8 @@ public class VendaService {
         
         BigDecimal ticketMedio = somaTickets;
         
-        // Obter dados MAX - usar primeira filial ou null
-        String primeiraFilial = (filiais != null && !filiais.isEmpty()) ? filiais.get(0) : null;
-        DashboardResponse.MaxResponse maxResponse = obterDadosMax(primeiraFilial, vendedor, dataInicio, dataFim);
+        // Obter dados MAX - buscar entre todas as filiais selecionadas
+        DashboardResponse.MaxResponse maxResponse = obterDadosMaxMultiplasFiliais(filiais, vendedor, dataInicio, dataFim);
         
         // Obter dados para gráfico (agregando todas as filiais)
         List<Map<String, Object>> dadosGrafico = agruparPorMes ? 
@@ -232,6 +231,65 @@ public class VendaService {
         
         // Vendedor que mais vendeu
         List<Object[]> vendedorMax = vendaRepository.vendedorQueMaisVendeu(filial, dataInicio, dataFim);
+        String vendedorQueMaisVendeu = "";
+        BigDecimal totalVendedorMax = BigDecimal.ZERO;
+        
+        if (!vendedorMax.isEmpty()) {
+            Object[] resultado = vendedorMax.get(0);
+            vendedorQueMaisVendeu = (String) resultado[0];
+            totalVendedorMax = (BigDecimal) resultado[1];
+        }
+        
+        // Unidade que mais vendeu
+        List<Object[]> unidadeMax = vendaRepository.unidadeQueMaisVendeu(vendedor, dataInicio, dataFim);
+        String unidadeQueMaisVendeu = "";
+        BigDecimal totalUnidadeMax = BigDecimal.ZERO;
+        
+        if (!unidadeMax.isEmpty()) {
+            Object[] resultado = unidadeMax.get(0);
+            unidadeQueMaisVendeu = (String) resultado[0];
+            totalUnidadeMax = (BigDecimal) resultado[1];
+        }
+        
+        return new DashboardResponse.MaxResponse(maiorVenda, clienteMaiorVenda, vendedorMaiorVenda,
+                                               vendedorQueMaisVendeu, totalVendedorMax,
+                                               unidadeQueMaisVendeu, totalUnidadeMax);
+    }
+    
+    private DashboardResponse.MaxResponse obterDadosMaxMultiplasFiliais(List<String> filiais, String vendedor, 
+                                                       LocalDate dataInicio, LocalDate dataFim) {
+        
+        BigDecimal maiorVenda = BigDecimal.ZERO;
+        String clienteMaiorVenda = "";
+        String vendedorMaiorVenda = "";
+        
+        // Se não há filiais específicas, buscar em todas
+        if (filiais == null || filiais.isEmpty()) {
+            List<Venda> maioresVendas = vendaRepository.maiorVendaPorFiltros(null, vendedor, dataInicio, dataFim);
+            if (!maioresVendas.isEmpty()) {
+                Venda vendaMaior = maioresVendas.get(0);
+                maiorVenda = vendaMaior.getValorVenda();
+                clienteMaiorVenda = vendaMaior.getCliente();
+                vendedorMaiorVenda = vendaMaior.getVendedor() != null ? vendaMaior.getVendedor() : "";
+            }
+        } else {
+            // Buscar a maior venda entre todas as filiais selecionadas
+            for (String filial : filiais) {
+                List<Venda> maioresVendas = vendaRepository.maiorVendaPorFiltros(filial, vendedor, dataInicio, dataFim);
+                if (!maioresVendas.isEmpty()) {
+                    Venda vendaMaior = maioresVendas.get(0);
+                    if (vendaMaior.getValorVenda().compareTo(maiorVenda) > 0) {
+                        maiorVenda = vendaMaior.getValorVenda();
+                        clienteMaiorVenda = vendaMaior.getCliente();
+                        vendedorMaiorVenda = vendaMaior.getVendedor() != null ? vendaMaior.getVendedor() : "";
+                    }
+                }
+            }
+        }
+        
+        // Vendedor que mais vendeu (considerando todas as filiais)
+        String filialParaVendedor = (filiais != null && !filiais.isEmpty()) ? filiais.get(0) : null;
+        List<Object[]> vendedorMax = vendaRepository.vendedorQueMaisVendeu(filialParaVendedor, dataInicio, dataFim);
         String vendedorQueMaisVendeu = "";
         BigDecimal totalVendedorMax = BigDecimal.ZERO;
         
