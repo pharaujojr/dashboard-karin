@@ -415,9 +415,15 @@ function pararAutoRefresh() {
 }
 
 // Atualizar indicador de comparação com período anterior
-function atualizarComparacao(elementoId, variacao) {
+function atualizarComparacao(elementoId, variacao, tipoPeriodo) {
     const elemento = document.getElementById(elementoId);
     if (!elemento) return;
+    
+    // Ocultar comparativo se período for personalizado
+    if (tipoPeriodo === 'personalizado') {
+        elemento.classList.add('hidden');
+        return;
+    }
     
     // Se não houver variação, ocultar o indicador
     if (variacao === null || variacao === undefined) {
@@ -499,10 +505,10 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia', filtrosAtuais = null) {
         atualizarElemento('numero-vendas', dados.numeroVendas || '0');
         atualizarElemento('ticket-medio', formatarMoeda(dados.ticketMedio));
         
-        // Atualizar indicadores de comparação
-        atualizarComparacao('comparison-total-vendas', dados.comparison?.totalVendasVariacao);
-        atualizarComparacao('comparison-numero-vendas', dados.comparison?.numeroVendasVariacao);
-        atualizarComparacao('comparison-ticket-medio', dados.comparison?.ticketMedioVariacao);
+        // Atualizar indicadores de comparação (ocultar se período for personalizado)
+        atualizarComparacao('comparison-total-vendas', dados.comparison?.totalVendasVariacao, tipoPeriodo);
+        atualizarComparacao('comparison-numero-vendas', dados.comparison?.numeroVendasVariacao, tipoPeriodo);
+        atualizarComparacao('comparison-ticket-medio', dados.comparison?.ticketMedioVariacao, tipoPeriodo);
     }
 
     // Atualizar seção MAX
