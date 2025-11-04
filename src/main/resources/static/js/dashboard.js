@@ -336,9 +336,9 @@ async function filtrarDados() {
         }
         
         // Enviar tipo de período para cálculo de comparação
-        if (tipoPeriodo && tipoPeriodo !== 'personalizado') {
-            params.append('tipoPeriodo', tipoPeriodo);
-        }
+        // Se for personalizado, enviar 'dia' como padrão para cálculos
+        const tipoPeriodoParam = (tipoPeriodo && tipoPeriodo !== 'personalizado') ? tipoPeriodo : 'dia';
+        params.append('tipoPeriodo', tipoPeriodoParam);
 
         const url = `${API_BASE_URL}/dashboard?${params}`;
         console.log('[FETCH] URL:', url);

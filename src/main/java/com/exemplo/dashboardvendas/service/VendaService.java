@@ -473,6 +473,11 @@ public class VendaService {
         LocalDate dataInicioAnterior;
         LocalDate dataFimAnterior;
         
+        // Se tipoPeriodo for null ou vazio, usar "dia" como padrão
+        if (tipoPeriodo == null || tipoPeriodo.isEmpty()) {
+            tipoPeriodo = "dia";
+        }
+        
         // Calcular período anterior baseado no tipo de período
         switch (tipoPeriodo) {
             case "mes":
