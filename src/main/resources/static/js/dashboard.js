@@ -11,6 +11,7 @@ let ultimosFiltros = null; // Cache dos filtros usados na última requisição
 // Variáveis de paginação do ranking
 let todosVendedores = []; // Todos os vendedores
 let paginaAtualRanking = 1;
+let tipoPeriodoAtual = 'dia'; // Tipo de período atual (para controlar comparativos)
 const VENDEDORES_POR_PAGINA = 10;
 
 // Inicialização da página
@@ -546,7 +547,7 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia', filtrosAtuais = null) {
         console.log('[DASHBOARD] Top vendedores mudaram, redesenhando...');
         console.log('Anterior:', ultimosDados?.top10Vendedores?.map(v => ({nome: v.nome, total: v.total})));
         console.log('Novo:', dados.top10Vendedores?.map(v => ({nome: v.nome, total: v.total})));
-        atualizarGraficoTopVendedores(dados.top10Vendedores || []);
+        atualizarGraficoTopVendedores(dados.top10Vendedores || [], tipoPeriodo);
     } else {
         console.log('[DASHBOARD] Top vendedores NÃO mudaram, mantendo gráfico');
     }
@@ -677,9 +678,10 @@ function atualizarGrafico(dadosGrafico, tipoPeriodo = 'dia') {
 }
 
 // Atualizar gráfico de top vendedores
-function atualizarGraficoTopVendedores(topVendedores) {
-    // Armazenar todos os vendedores
+function atualizarGraficoTopVendedores(topVendedores, tipoPeriodo) {
+    // Armazenar todos os vendedores e tipo de período
     todosVendedores = topVendedores || [];
+    tipoPeriodoAtual = tipoPeriodo || 'dia';
     
     // Resetar para página 1 quando receber novos dados
     paginaAtualRanking = 1;
@@ -761,8 +763,9 @@ function renderizarPaginaRanking() {
                         ctx.fillStyle = '#374151';
                         ctx.fillText(label, bar.x + 10, bar.y);
                         
-                        // Adicionar indicador de comparação se houver variação
-                        if (variacao !== null && variacao !== undefined && variacao !== 0) {
+                        // Adicionar indicador de comparação apenas se período NÃO for personalizado
+                        if (tipoPeriodoAtual !== 'personalizado' && 
+                            variacao !== null && variacao !== undefined && variacao !== 0) {
                             const variacaoText = Math.abs(variacao).toFixed(1) + '%';
                             const arrow = variacao > 0 ? '▲' : '▼';
                             const color = variacao > 0 ? '#10b981' : '#ef4444';
