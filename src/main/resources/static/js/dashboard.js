@@ -155,7 +155,10 @@ async function carregarVendedoresPorUnidade(unidade) {
             vendedores = await response.json();
         }
         
-        vendedores.forEach(vendedor => {
+        // Remover duplicatas (mesmo que de unidades diferentes)
+        const vendedoresUnicos = [...new Set(vendedores)];
+        
+        vendedoresUnicos.forEach(vendedor => {
             const option = document.createElement('option');
             option.value = vendedor;
             option.textContent = vendedor ? vendedor.toUpperCase() : '';
