@@ -29,7 +29,7 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
     // Buscar vendas com múltiplos filtros
     @Query("SELECT v FROM Venda v WHERE " +
            "(:filial IS NULL OR v.filial = :filial) AND " +
-           "(:vendedor IS NULL OR LOWER(v.vendedor) = LOWER(:vendedor)) AND " +
+           "(:vendedor IS NULL OR v.vendedor = :vendedor) AND " +
            "v.dataVenda BETWEEN :dataInicio AND :dataFim")
     List<Venda> findByFiltros(@Param("filial") String filial,
                               @Param("vendedor") String vendedor,
@@ -39,7 +39,7 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
     // Soma total de vendas por filtros
     @Query("SELECT COALESCE(SUM(v.valorVenda), 0) FROM Venda v WHERE " +
            "(:filial IS NULL OR v.filial = :filial) AND " +
-           "(:vendedor IS NULL OR LOWER(v.vendedor) = LOWER(:vendedor)) AND " +
+           "(:vendedor IS NULL OR v.vendedor = :vendedor) AND " +
            "v.dataVenda BETWEEN :dataInicio AND :dataFim")
     BigDecimal somaVendasPorFiltros(@Param("filial") String filial,
                                     @Param("vendedor") String vendedor,
@@ -49,7 +49,7 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
     // Ticket médio por filtros
     @Query("SELECT COALESCE(AVG(v.valorVenda), 0) FROM Venda v WHERE " +
            "(:filial IS NULL OR v.filial = :filial) AND " +
-           "(:vendedor IS NULL OR LOWER(v.vendedor) = LOWER(:vendedor)) AND " +
+           "(:vendedor IS NULL OR v.vendedor = :vendedor) AND " +
            "v.dataVenda BETWEEN :dataInicio AND :dataFim")
     BigDecimal ticketMedioPorFiltros(@Param("filial") String filial,
                                      @Param("vendedor") String vendedor,
@@ -59,7 +59,7 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
     // Número de vendas por filtros
     @Query("SELECT COUNT(v) FROM Venda v WHERE " +
            "(:filial IS NULL OR v.filial = :filial) AND " +
-           "(:vendedor IS NULL OR LOWER(v.vendedor) = LOWER(:vendedor)) AND " +
+           "(:vendedor IS NULL OR v.vendedor = :vendedor) AND " +
            "v.dataVenda BETWEEN :dataInicio AND :dataFim")
     Long contarVendasPorFiltros(@Param("filial") String filial,
                                @Param("vendedor") String vendedor,
@@ -69,7 +69,7 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
     // Maior venda por filtros
     @Query("SELECT v FROM Venda v WHERE " +
            "(:filial IS NULL OR v.filial = :filial) AND " +
-           "(:vendedor IS NULL OR LOWER(v.vendedor) = LOWER(:vendedor)) AND " +
+           "(:vendedor IS NULL OR v.vendedor = :vendedor) AND " +
            "v.dataVenda BETWEEN :dataInicio AND :dataFim " +
            "ORDER BY v.valorVenda DESC")
     List<Venda> maiorVendaPorFiltros(@Param("filial") String filial,
@@ -106,7 +106,7 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
     
     // Unidade que mais vendeu (por valor total)
     @Query("SELECT v.filial, SUM(v.valorVenda) as total FROM Venda v WHERE " +
-           "(:vendedor IS NULL OR LOWER(v.vendedor) = LOWER(:vendedor)) AND " +
+           "(:vendedor IS NULL OR v.vendedor = :vendedor) AND " +
            "v.dataVenda BETWEEN :dataInicio AND :dataFim " +
            "GROUP BY v.filial ORDER BY total DESC")
     List<Object[]> unidadeQueMaisVendeu(@Param("vendedor") String vendedor,
@@ -118,17 +118,17 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
     List<String> findDistinctFiliais();
     
     // Buscar todos os vendedores distintos
-    @Query("SELECT DISTINCT UPPER(v.vendedor) FROM Venda v WHERE v.vendedor IS NOT NULL ORDER BY UPPER(v.vendedor)")
+    @Query("SELECT DISTINCT v.vendedor FROM Venda v WHERE v.vendedor IS NOT NULL ORDER BY v.vendedor")
     List<String> findDistinctVendedores();
     
     // Buscar vendedores distintos por filial
-    @Query("SELECT DISTINCT UPPER(v.vendedor) FROM Venda v WHERE v.filial = :filial AND v.vendedor IS NOT NULL ORDER BY UPPER(v.vendedor)")
+    @Query("SELECT DISTINCT v.vendedor FROM Venda v WHERE v.filial = :filial AND v.vendedor IS NOT NULL ORDER BY v.vendedor")
     List<String> findDistinctVendedoresByFilial(@Param("filial") String filial);
     
     // Dados para gráfico de vendas por período
     @Query("SELECT v.dataVenda as data, SUM(v.valorVenda) as total FROM Venda v WHERE " +
            "(:filial IS NULL OR v.filial = :filial) AND " +
-           "(:vendedor IS NULL OR LOWER(v.vendedor) = LOWER(:vendedor)) AND " +
+           "(:vendedor IS NULL OR v.vendedor = :vendedor) AND " +
            "v.dataVenda BETWEEN :dataInicio AND :dataFim " +
            "GROUP BY v.dataVenda ORDER BY v.dataVenda")
     List<Object[]> dadosGraficoVendasPorPeriodo(@Param("filial") String filial,
@@ -140,7 +140,7 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
     @Query(value = "SELECT DATE_TRUNC('month', v.data_venda) as mes, SUM(v.valor_venda) as total " +
            "FROM vendas_nacional v WHERE " +
            "(:filial IS NULL OR v.filial = :filial) AND " +
-           "(:vendedor IS NULL OR LOWER(v.vendedor) = LOWER(:vendedor)) AND " +
+           "(:vendedor IS NULL OR v.vendedor = :vendedor) AND " +
            "v.data_venda BETWEEN :dataInicio AND :dataFim " +
            "GROUP BY DATE_TRUNC('month', v.data_venda) " +
            "ORDER BY mes", nativeQuery = true)
