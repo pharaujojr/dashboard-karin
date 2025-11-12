@@ -119,21 +119,11 @@ async function carregarFiltros() {
         const vendedoresResponse = await fetch(`${API_BASE_URL}/vendedores`);
         const vendedores = await vendedoresResponse.json();
         
-        // Remover duplicatas considerando case-insensitive
-        const vendedoresMap = new Map();
-        vendedores.forEach(vendedor => {
-            const key = vendedor.toUpperCase();
-            if (!vendedoresMap.has(key)) {
-                vendedoresMap.set(key, vendedor);
-            }
-        });
-        const vendedoresUnicos = Array.from(vendedoresMap.values());
-        
         const selectVendedor = document.getElementById('filtro-vendedor');
         if (selectVendedor) {
-            vendedoresUnicos.forEach(vendedor => {
+            vendedores.forEach(vendedor => {
                 const option = document.createElement('option');
-                option.value = vendedor;
+                option.value = vendedor; // Backend já retorna em UPPERCASE
                 option.textContent = vendedor;
                 selectVendedor.appendChild(option);
             });
@@ -165,19 +155,9 @@ async function carregarVendedoresPorUnidade(unidade) {
             vendedores = await response.json();
         }
         
-        // Remover duplicatas considerando case-insensitive
-        const vendedoresMap = new Map();
         vendedores.forEach(vendedor => {
-            const key = vendedor.toUpperCase();
-            if (!vendedoresMap.has(key)) {
-                vendedoresMap.set(key, vendedor);
-            }
-        });
-        const vendedoresUnicos = Array.from(vendedoresMap.values());
-        
-        vendedoresUnicos.forEach(vendedor => {
             const option = document.createElement('option');
-            option.value = vendedor;
+            option.value = vendedor; // Backend já retorna em UPPERCASE
             option.textContent = vendedor;
             selectVendedor.appendChild(option);
         });
