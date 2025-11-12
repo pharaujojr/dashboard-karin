@@ -118,11 +118,11 @@ public interface VendaRepository extends JpaRepository<Venda, Long> {
     List<String> findDistinctFiliais();
     
     // Buscar todos os vendedores distintos
-    @Query("SELECT DISTINCT v.vendedor FROM Venda v ORDER BY v.vendedor")
+    @Query("SELECT DISTINCT UPPER(TRIM(v.vendedor)) FROM Venda v WHERE v.vendedor IS NOT NULL ORDER BY UPPER(TRIM(v.vendedor))")
     List<String> findDistinctVendedores();
     
     // Buscar vendedores distintos por filial
-    @Query("SELECT DISTINCT v.vendedor FROM Venda v WHERE v.filial = :filial ORDER BY v.vendedor")
+    @Query("SELECT DISTINCT UPPER(TRIM(v.vendedor)) FROM Venda v WHERE v.filial = :filial AND v.vendedor IS NOT NULL ORDER BY UPPER(TRIM(v.vendedor))")
     List<String> findDistinctVendedoresByFilial(@Param("filial") String filial);
     
     // Dados para gráfico de vendas por período

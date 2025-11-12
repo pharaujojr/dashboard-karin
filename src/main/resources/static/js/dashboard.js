@@ -119,12 +119,15 @@ async function carregarFiltros() {
         const vendedoresResponse = await fetch(`${API_BASE_URL}/vendedores`);
         const vendedores = await vendedoresResponse.json();
         
+        // Remover duplicatas
+        const vendedoresUnicos = [...new Set(vendedores)];
+        
         const selectVendedor = document.getElementById('filtro-vendedor');
         if (selectVendedor) {
-            vendedores.forEach(vendedor => {
+            vendedoresUnicos.forEach(vendedor => {
                 const option = document.createElement('option');
                 option.value = vendedor;
-                option.textContent = vendedor.toUpperCase();
+                option.textContent = vendedor; // Backend já retorna em UPPER CASE
                 selectVendedor.appendChild(option);
             });
         }
@@ -161,7 +164,7 @@ async function carregarVendedoresPorUnidade(unidade) {
         vendedoresUnicos.forEach(vendedor => {
             const option = document.createElement('option');
             option.value = vendedor;
-            option.textContent = vendedor ? vendedor.toUpperCase() : '';
+            option.textContent = vendedor; // Backend já retorna em UPPER CASE
             selectVendedor.appendChild(option);
         });
         
