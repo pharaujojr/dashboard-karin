@@ -452,8 +452,9 @@ public class VendaService {
             vendedor.put("nome", nomeVendedor);
             vendedor.put("total", totalAtual);
             
-            // Calcular variação para este vendedor
-            BigDecimal totalAnterior = vendaRepository.somaVendasPorFiltros(filial, nomeVendedor, dataInicioAnterior, dataFimAnterior);
+            // Calcular variação para este vendedor (convertendo nome para UPPERCASE para comparação)
+            String nomeVendedorUpper = nomeVendedor.toUpperCase();
+            BigDecimal totalAnterior = vendaRepository.somaVendasPorFiltros(filial, nomeVendedorUpper, dataInicioAnterior, dataFimAnterior);
             
             if (totalAnterior != null && totalAnterior.compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal diferenca = totalAtual.subtract(totalAnterior);
@@ -650,10 +651,11 @@ public class VendaService {
             String nomeVendedor = (String) vendedor[0];
             BigDecimal total = vendedor[1] != null ? new BigDecimal(vendedor[1].toString()) : BigDecimal.ZERO;
             
-            // Calcular vendas anteriores deste vendedor em todas as filiais
+            // Calcular vendas anteriores deste vendedor em todas as filiais (convertendo para UPPERCASE)
+            String nomeVendedorUpper = nomeVendedor.toUpperCase();
             BigDecimal totalAnterior = BigDecimal.ZERO;
             for (String filial : filiais) {
-                BigDecimal valorFilial = vendaRepository.somaVendasPorFiltros(filial, nomeVendedor, dataInicioAnterior, dataFimAnterior);
+                BigDecimal valorFilial = vendaRepository.somaVendasPorFiltros(filial, nomeVendedorUpper, dataInicioAnterior, dataFimAnterior);
                 if (valorFilial != null) {
                     totalAnterior = totalAnterior.add(valorFilial);
                 }
