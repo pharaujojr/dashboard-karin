@@ -268,9 +268,11 @@ public class VendaService {
             List<Venda> maioresVendas = vendaRepository.maiorVendaPorFiltros(null, vendedor, dataInicio, dataFim);
             if (!maioresVendas.isEmpty()) {
                 Venda vendaMaior = maioresVendas.get(0);
-                maiorVenda = vendaMaior.getValorVenda();
-                clienteMaiorVenda = vendaMaior.getCliente();
-                vendedorMaiorVenda = vendaMaior.getVendedor() != null ? vendaMaior.getVendedor() : "";
+                if (vendaMaior.getValorVenda() != null) {
+                    maiorVenda = vendaMaior.getValorVenda();
+                    clienteMaiorVenda = vendaMaior.getCliente();
+                    vendedorMaiorVenda = vendaMaior.getVendedor() != null ? vendaMaior.getVendedor() : "";
+                }
             }
         } else {
             // Buscar a maior venda entre todas as filiais selecionadas
@@ -278,7 +280,7 @@ public class VendaService {
                 List<Venda> maioresVendas = vendaRepository.maiorVendaPorFiltros(filial, vendedor, dataInicio, dataFim);
                 if (!maioresVendas.isEmpty()) {
                     Venda vendaMaior = maioresVendas.get(0);
-                    if (vendaMaior.getValorVenda().compareTo(maiorVenda) > 0) {
+                    if (vendaMaior.getValorVenda() != null && vendaMaior.getValorVenda().compareTo(maiorVenda) > 0) {
                         maiorVenda = vendaMaior.getValorVenda();
                         clienteMaiorVenda = vendaMaior.getCliente();
                         vendedorMaiorVenda = vendaMaior.getVendedor() != null ? vendaMaior.getVendedor() : "";
