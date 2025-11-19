@@ -1,0 +1,779 @@
+// ====================================================================
+// Dashboard de Bonés - Análise de vendas com bone='SIM'
+// ====================================================================
+// Este dashboard analisa vendas apenas das filiais:
+// - Sorriso
+// - Lucas do Rio Verde  
+// - Sinop
+// Todos os dados são filtrados automaticamente para bone='SIM'
+// ====================================================================
+
+// Variáveis globais
+let vendasChart;
+let vendasAcumuladasChart;
+let topVendedoresChart;
+let autoRefreshInterval;
+const API_BASE_URL = '/bone/api';
+const REFRESH_INTERVAL = 15000; // 15 segundos em milissegundos
+let ultimosDados = null; // Cache dos últimos dados recebidos
+let ultimosFiltros = null; // Cache dos filtros usados na última requisição
+
+// Variáveis de paginação do ranking
+let todosVendedores = []; // Todos os vendedores
+let paginaAtualRanking = 1;
+let tipoPeriodoAtual = 'dia'; // Tipo de período atual (para controlar comparativos)
+const VENDEDORES_POR_PAGINA = 10;
+
+// Inicialização da página
+document.addEventListener('DOMContentLoaded', function() {
+    carregarFiltros();
+    carregarDadosIniciais();
+    configurarEventos();
+    configurarVisibilityChange();
+});
+
+// Configurar mudança de visibilidade da página
+function configurarVisibilityChange() {
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            // Página não está visível, pausar auto-refresh
+            console.log('Página oculta: pausando auto-refresh');
+        } else {
+            // Página voltou a ficar visível, retomar auto-refresh se estava ativo
+            if (autoRefreshInterval) {
+                console.log('Página visível: retomando auto-refresh');
+                // Atualizar imediatamente ao voltar
+                filtrarDados();
+            }
+        }
+    });
+}
+
+// Configurar eventos
+function configurarEventos() {
+    // Função auxiliar para adicionar event listener com verificação
+    function adicionarEvento(id, evento, callback) {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elemento.addEventListener(evento, callback);
+        } else {
+            console.warn(`Elemento com ID '${id}' não encontrado para evento '${evento}'`);
+        }
+    }
+
+    // Dashboard de bonés: sem filtros, carrega automaticamente com data do dia
+    
+    // Botões de paginação do ranking
+    adicionarEvento('prev-page-btn', 'click', function() {
+        if (paginaAtualRanking > 1) {
+            mudarPaginaRanking(paginaAtualRanking - 1);
+        }
+    });
+    adicionarEvento('next-page-btn', 'click', function() {
+        const totalPaginas = Math.ceil(todosVendedores.length / VENDEDORES_POR_PAGINA);
+        if (paginaAtualRanking < totalPaginas) {
+            mudarPaginaRanking(paginaAtualRanking + 1);
+        }
+    });
+}
+
+// Dashboard de bonés não carrega filtros (sem seção de filtros na UI)
+async function carregarFiltros() {
+    try {
+        // Nota: Função mantida para compatibilidade, mas não carrega filtros
+        console.log('Dashboard de bonés: sem filtros de vendedor');
+    } catch (error) {
+        console.error('Erro ao carregar filtros:', error);
+        mostrarNotificacao('Erro ao carregar filtros', 'error');
+    }
+}
+
+// Definir período predefinido
+function definirPeriodoPredefinido(tipo) {
+    const hoje = new Date();
+    let dataInicio, dataFim;
+    switch (tipo) {
+        case 'dia':
+            // Hoje (aplica somente o dia atual)
+            dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            dataFim = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            break;
+
+        case 'semana':
+            // Início da semana: segunda-feira (ISO). Fim: hoje (week-to-date).
+            // If you prefer full week (Mon-Sun) change dataFim to inicio + 6 days.
+            const diaSemana = hoje.getDay(); // 0 (Sun) .. 6 (Sat)
+            const diffParaSegunda = (diaSemana + 6) % 7; // Monday = 0
+            const inicioSemanaDate = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - diffParaSegunda);
+            dataInicio = inicioSemanaDate;
+            dataFim = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            break;
+
+        case 'mes':
+            // Primeiro dia do mês até o último dia do mês
+            dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            dataFim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0); // último dia do mês
+            break;
+
+        case 'mes-passado':
+            // Primeiro dia do mês anterior até seu último dia
+            const anoMesPassado = (hoje.getMonth() === 0) ? hoje.getFullYear() - 1 : hoje.getFullYear();
+            const mesAnterior = (hoje.getMonth() + 11) % 12; // previous month index
+            dataInicio = new Date(anoMesPassado, mesAnterior, 1);
+            dataFim = new Date(anoMesPassado, mesAnterior + 1, 0); // último dia do mês anterior
+            break;
+
+        case 'trimestre':
+            // Primeiro dia do trimestre atual até o último dia do trimestre
+            const trimestreIndex = Math.floor(hoje.getMonth() / 3);
+            const trimestreInicioMes = trimestreIndex * 3;
+            dataInicio = new Date(hoje.getFullYear(), trimestreInicioMes, 1);
+            dataFim = new Date(hoje.getFullYear(), trimestreInicioMes + 3, 0); // último dia do trimestre
+            break;
+
+        case 'ano':
+            // Primeiro dia do ano até o último dia do ano (Janeiro 1 a Dezembro 31)
+            const anoAtual = hoje.getFullYear();
+            dataInicio = new Date(anoAtual, 0, 1); // Janeiro 1
+            dataFim = new Date(anoAtual, 11, 31); // Dezembro 31
+            console.log('Ano calculation - Current year:', anoAtual, 'Start:', dataInicio, 'End:', dataFim);
+            break;
+
+        default:
+            // Fallback: hoje
+            dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            dataFim = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            break;
+    }
+    
+    const dataInicioElement = document.getElementById('data-inicio');
+    const dataFimElement = document.getElementById('data-fim');
+    
+    if (dataInicioElement) dataInicioElement.value = formatarDataInput(dataInicio);
+    if (dataFimElement) dataFimElement.value = formatarDataInput(dataFim);
+    // Debug: log datas calculadas para auxiliar rastreio
+    // Debug: sempre registrar as datas (YYYY-MM-DD)
+    console.log('definirPeriodoPredefinido -> tipo:', tipo, 'dataInicio:', formatarDataInput(dataInicio), 'dataFim:', formatarDataInput(dataFim));
+    // Filtrar automaticamente
+    setTimeout(filtrarDados, 100);
+}
+
+// Carregar dados iniciais
+function carregarDadosIniciais() {
+    // Usar o valor atualmente selecionado no select de período (se houver)
+    const tipoSelect = document.getElementById('tipo-periodo');
+    const tipo = tipoSelect ? tipoSelect.value : 'mes';
+    if (tipo === 'personalizado') {
+        const filtrosPersonalizados = document.getElementById('filtros-data-personalizada');
+        if (filtrosPersonalizados) filtrosPersonalizados.classList.remove('hidden');
+    }
+    definirPeriodoPredefinido(tipo || 'mes');
+}
+
+// Filtrar dados
+async function filtrarDados() {
+    // Adicionar classe de carregamento no indicador
+    const refreshIndicator = document.querySelector('.auto-refresh-indicator');
+    const refreshStatus = document.getElementById('refresh-status');
+    
+    if (refreshIndicator) {
+        refreshIndicator.classList.add('refreshing');
+    }
+    if (refreshStatus) {
+        refreshStatus.textContent = 'Atualizando...';
+    }
+    
+    // Função auxiliar para obter valor de elemento com verificação
+    function obterValor(id) {
+        const elemento = document.getElementById(id);
+        return elemento ? elemento.value : null;
+    }
+
+    // Dashboard de bonés: usa sempre data do dia automaticamente (sem filtros)
+    const hoje = new Date();
+    const dataInicio = hoje.toISOString().split('T')[0];
+    const dataFim = dataInicio; // Mesmo dia
+    const vendedor = null; // Sem filtro de vendedor
+    const tipoPeriodo = 'dia'; // Sempre dia atual
+
+    // Evitar parsing ambíguo de 'YYYY-MM-DD' com new Date(str) (UTC vs local).
+    function parseISODateToLocal(dateStr) {
+        if (!dateStr) return null;
+        if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            const parts = dateStr.split('-').map(Number);
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+        // fallback
+        return new Date(dateStr);
+    }
+
+    const dataInicioObj = parseISODateToLocal(dataInicio);
+    const dataFimObj = parseISODateToLocal(dataFim);
+    if (dataInicioObj && dataFimObj && dataInicioObj.getTime() > dataFimObj.getTime()) {
+        mostrarNotificacao('A data de início deve ser anterior à data de fim', 'warning');
+        return;
+    }
+
+    // mostrarLoading(true); // Removido - tela de loading desabilitada
+
+    try {
+        const params = new URLSearchParams({
+            dataInicio: dataInicio,
+            dataFim: dataFim
+        });
+
+        // Dashboard de bonés não precisa de filtro de unidade
+        // As filiais Sorriso, Lucas do Rio Verde e Sinop são fixas no backend
+        
+        // Criar objeto com filtros atuais para comparação
+        const filtrosAtuais = {
+            vendedor: vendedor || '',
+            dataInicio: dataInicio,
+            dataFim: dataFim,
+            tipoPeriodo: tipoPeriodo
+        };
+        
+        if (vendedor) params.append('vendedor', vendedor);
+        
+        // Enviar tipo de período para cálculo de comparação
+        // Se for personalizado, enviar 'dia' como padrão para cálculos
+        const tipoPeriodoParam = (tipoPeriodo && tipoPeriodo !== 'personalizado') ? tipoPeriodo : 'dia';
+        params.append('periodo', tipoPeriodoParam);
+
+        const url = `${API_BASE_URL}/dados?${params}`;
+        console.log('[FETCH] URL:', url);
+        console.log('[FETCH] Parâmetros:', Object.fromEntries(params));
+        
+        let response;
+        try {
+            response = await fetch(url);
+        } catch (fetchError) {
+            console.error('[FETCH] Erro de rede:', fetchError);
+            throw new Error(`Erro de conexão: ${fetchError.message}. Verifique se o servidor está rodando.`);
+        }
+        
+        console.log('[FETCH] Response status:', response.status);
+        console.log('[FETCH] Response ok:', response.ok);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[FETCH] Error response:', errorText);
+            throw new Error(`Erro ao buscar dados do dashboard (${response.status}): ${errorText}`);
+        }
+
+        const dados = await response.json();
+        console.log('[FETCH] Dados recebidos:', dados);
+        atualizarDashboard(dados, tipoPeriodo, filtrosAtuais);
+        
+        // Iniciar auto-refresh após carregar dados com sucesso
+        iniciarAutoRefresh();
+        
+    } catch (error) {
+        console.error('Erro ao filtrar dados:', error);
+        mostrarNotificacao('Erro ao carregar dados do dashboard', 'error');
+    } finally {
+        // mostrarLoading(false); // Removido - tela de loading desabilitada
+        
+        // Remover animação do indicador
+        const refreshIndicator = document.querySelector('.auto-refresh-indicator');
+        const refreshStatus = document.getElementById('refresh-status');
+        
+        if (refreshIndicator) {
+            refreshIndicator.classList.remove('refreshing');
+        }
+        if (refreshStatus) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            refreshStatus.textContent = `Última atualização: ${timeStr}`;
+        }
+    }
+}
+
+// Iniciar auto-refresh dos dados
+function iniciarAutoRefresh() {
+    // Limpar intervalo anterior se existir
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    // Configurar novo intervalo
+    autoRefreshInterval = setInterval(() => {
+        console.log('Auto-refresh: atualizando dados do dashboard...');
+        filtrarDados();
+    }, REFRESH_INTERVAL);
+    
+    console.log(`Auto-refresh iniciado: ${REFRESH_INTERVAL / 1000} segundos`);
+}
+
+// Parar auto-refresh dos dados
+function pararAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        console.log('Auto-refresh parado');
+    }
+}
+
+// Atualizar indicador de comparação com período anterior
+function atualizarComparacao(elementoId, variacao, tipoPeriodo) {
+    const elemento = document.getElementById(elementoId);
+    if (!elemento) return;
+    
+    // Ocultar comparativo se período for personalizado
+    if (tipoPeriodo === 'personalizado') {
+        elemento.classList.add('hidden');
+        return;
+    }
+    
+    // Se não houver variação, ocultar o indicador
+    if (variacao === null || variacao === undefined) {
+        elemento.classList.add('hidden');
+        return;
+    }
+    
+    // Mostrar o indicador
+    elemento.classList.remove('hidden');
+    
+    // Determinar se é positivo ou negativo
+    const isPositivo = variacao >= 0;
+    
+    // Atualizar classes
+    elemento.classList.remove('positive', 'negative');
+    elemento.classList.add(isPositivo ? 'positive' : 'negative');
+    
+    // Atualizar conteúdo (seta + percentual)
+    const seta = isPositivo ? '↑' : '↓';
+    const percentual = Math.abs(variacao).toFixed(1);
+    elemento.textContent = `${seta} ${percentual}%`;
+}
+
+// Atualizar dashboard com novos dados
+function atualizarDashboard(dados, tipoPeriodo = 'dia', filtrosAtuais = null) {
+    // Verificar se os filtros mudaram
+    const filtrosMudaram = !ultimosFiltros || 
+        JSON.stringify(ultimosFiltros) !== JSON.stringify(filtrosAtuais);
+    
+    // PROTEÇÃO: Evitar regressão de dados - MAS APENAS se os filtros NÃO mudaram
+    if (!filtrosMudaram && ultimosDados && dados && dados.totalVendas !== undefined && ultimosDados.totalVendas !== undefined) {
+        const totalVendasNovo = parseFloat(dados.totalVendas) || 0;
+        const totalVendasAntigo = parseFloat(ultimosDados.totalVendas) || 0;
+        
+        if (totalVendasNovo < totalVendasAntigo) {
+            console.warn('[DASHBOARD] ⚠️ Total de vendas menor que o anterior - atualização bloqueada');
+            console.warn('Anterior:', formatarMoeda(totalVendasAntigo), 'Novo:', formatarMoeda(totalVendasNovo));
+            return; // Não atualiza nada
+        }
+    }
+    
+    if (filtrosMudaram) {
+        console.log('[DASHBOARD] ℹ️ Filtros mudaram - permitindo atualização');
+        console.log('Filtros anteriores:', ultimosFiltros);
+        console.log('Filtros atuais:', filtrosAtuais);
+    }
+    
+    // Verificar se os dados mudaram
+    const dadosMudaram = !ultimosDados || JSON.stringify(ultimosDados) !== JSON.stringify(dados);
+    
+    // Verificações específicas para otimizar atualizações
+    const metricasMudaram = !ultimosDados || 
+        ultimosDados.totalVendas !== dados.totalVendas ||
+        ultimosDados.numeroVendas !== dados.numeroVendas ||
+        ultimosDados.ticketMedio !== dados.ticketMedio;
+    
+    const graficoMudou = !ultimosDados || 
+        JSON.stringify(ultimosDados.dadosGrafico) !== JSON.stringify(dados.dadosGrafico);
+    
+    // Comparação específica para top vendedores (apenas nome e total)
+    const topVendedoresMudou = !ultimosDados || !ultimosDados.top10Vendedores ||
+        ultimosDados.top10Vendedores.length !== dados.top10Vendedores.length ||
+        ultimosDados.top10Vendedores.some((v, i) => 
+            v.nome !== dados.top10Vendedores[i]?.nome || 
+            v.total !== dados.top10Vendedores[i]?.total
+        );
+    
+    // Função auxiliar para atualizar elemento com verificação
+    function atualizarElemento(id, texto) {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elemento.textContent = texto;
+        }
+    }
+
+    // Renderizar pódios (se foram retornados)
+    function renderPodiumVendedores(podium) {
+        if (!podium || !Array.isArray(podium)) return;
+        // Expecting up to 3 items with {posicao, nome, total, filial}
+        podium.forEach(item => {
+            const pos = item.posicao;
+            const el = document.getElementById(`podium-${pos}`);
+            if (el) {
+                const nomeEl = el.querySelector('.podium-nome');
+                const filialEl = el.querySelector('.podium-filial');
+                const totalEl = el.querySelector('.podium-total');
+                if (nomeEl) nomeEl.textContent = (item.nome || '-').toUpperCase();
+                if (filialEl) filialEl.textContent = (item.filial || '-');
+                if (totalEl) totalEl.textContent = formatarMoeda(item.total || 0);
+            }
+        });
+    }
+
+    function renderPodiumUnidades(podiumUnidades) {
+        if (!podiumUnidades || !Array.isArray(podiumUnidades)) return;
+        
+        // Função para formatar nome da equipe
+        function formatarNomeEquipe(filial) {
+            const filialUpper = (filial || '').toUpperCase();
+            
+            if (filialUpper.includes('LUCAS')) {
+                return 'TEAM LUCAS';
+            } else if (filialUpper.includes('SORRISO')) {
+                return 'TEAM SORRISO';
+            } else if (filialUpper.includes('SINOP')) {
+                return 'TEAM SINOP';
+            }
+            return 'TEAM ' + filial;
+        }
+        
+        podiumUnidades.forEach(item => {
+            const pos = item.posicao;
+            const el = document.getElementById(`podium-unit-${pos}`);
+            if (el) {
+                const nomeEl = el.querySelector('.podium-nome');
+                const totalEl = el.querySelector('.podium-total');
+                if (nomeEl) nomeEl.textContent = formatarNomeEquipe(item.filial || '-');
+                if (totalEl) totalEl.textContent = formatarMoeda(item.total || 0);
+            }
+        });
+    }
+
+    if (dados.podiumVendedores) {
+        renderPodiumVendedores(dados.podiumVendedores);
+    }
+    if (dados.podiumUnidades) {
+        renderPodiumUnidades(dados.podiumUnidades);
+    }
+
+    // Atualizar tabela de classificação apenas se mudou (todos os vendedores)
+    if (topVendedoresMudou) {
+        console.log('[DASHBOARD] Top vendedores mudaram, redesenhando tabela...');
+        atualizarTabelaClassificacao(dados.top10Vendedores || [], tipoPeriodo);
+    } else {
+        console.log('[DASHBOARD] Top vendedores NÃO mudaram, mantendo tabela');
+    }
+
+    // Animação de entrada apenas na primeira carga
+    if (!ultimosDados) {
+        animarCartoes();
+    }
+    
+    // Armazenar dados e filtros atuais
+    if (dadosMudaram) {
+        ultimosDados = JSON.parse(JSON.stringify(dados));
+        ultimosFiltros = filtrosAtuais ? JSON.parse(JSON.stringify(filtrosAtuais)) : null;
+    }
+}
+
+// Nota: Gráfico diário/agregado removido para o dashboard de bonés conforme requisitos
+
+
+// Atualizar tabela de classificação F1
+function atualizarTabelaClassificacao(vendedores) {
+    const tbody = document.getElementById('standings-body');
+    if (!tbody) return;
+    
+    // Limpar tabela
+    tbody.innerHTML = '';
+    
+    // Se não houver vendedores, mostrar mensagem
+    if (!vendedores || vendedores.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: #cccccc;">Nenhum dado disponível</td></tr>';
+        return;
+    }
+    
+    // Calcular total do 1º lugar para gaps
+    const primeiroTotal = vendedores.length > 0 ? (parseFloat(vendedores[0].total) || 0) : 0;
+    
+    // Função para abreviar nome (3 primeiras letras)
+    function abreviarNome(nome) {
+        if (!nome || nome.length <= 3) return nome;
+        return nome.substring(0, 3).toUpperCase();
+    }
+    
+    // Função para formatar nome da equipe
+    function formatarEquipe(filial) {
+        const filialUpper = (filial || '').toUpperCase();
+        
+        // Formatação completa
+        if (filialUpper.includes('LUCAS')) {
+            return 'LUCAS';
+        } else if (filialUpper.includes('SORRISO')) {
+            return 'SORRISO';
+        } else if (filialUpper.includes('SINOP')) {
+            return 'SINOP';
+        }
+        return filial || 'N/A';
+    }
+    
+    // Função para abreviar equipe
+    function abreviarEquipe(filial) {
+        const filialUpper = (filial || '').toUpperCase();
+        
+        if (filialUpper.includes('LUCAS')) {
+            return 'TLR';
+        } else if (filialUpper.includes('SORRISO')) {
+            return 'TSR';
+        } else if (filialUpper.includes('SINOP')) {
+            return 'TSP';
+        }
+        return 'N/A';
+    }
+    
+    // Renderizar cada linha
+    vendedores.forEach((vendedor, index) => {
+        const posicao = index + 1;
+        const nome = vendedor.nome ? vendedor.nome.toUpperCase() : 'SEM NOME';
+        const total = parseFloat(vendedor.total) || 0;
+        const filial = vendedor.filial || 'Não informada';
+        
+        // Calcular diferença para o 1º
+        const gap = primeiroTotal - total;
+        
+        const tr = document.createElement('tr');
+        
+        // Coluna Posição
+        const tdPos = document.createElement('td');
+        tdPos.style.textAlign = 'center';
+        const posBox = document.createElement('div');
+        posBox.className = posicao === 1 ? 'pos-box first' : 'pos-box other';
+        posBox.textContent = posicao;
+        tdPos.appendChild(posBox);
+        tr.appendChild(tdPos);
+        
+        // Coluna Piloto
+        const tdDriver = document.createElement('td');
+        const driverSpan = document.createElement('span');
+        driverSpan.className = 'driver-name';
+        driverSpan.textContent = nome;
+        driverSpan.setAttribute('data-mobile', abreviarNome(nome));
+        tdDriver.appendChild(driverSpan);
+        tr.appendChild(tdDriver);
+        
+        // Coluna Team
+        const tdTeam = document.createElement('td');
+        const teamSpan = document.createElement('span');
+        teamSpan.className = 'team-name';
+        teamSpan.textContent = formatarEquipe(filial);
+        teamSpan.setAttribute('data-mobile', abreviarEquipe(filial));
+        tdTeam.appendChild(teamSpan);
+        tr.appendChild(tdTeam);
+        
+        // Coluna Pontos (apenas diferença para o 1º)
+        const tdPoints = document.createElement('td');
+        const pointsDiv = document.createElement('div');
+        pointsDiv.className = 'points-value';
+        
+        if (posicao === 1) {
+            // 1º lugar mostra 0
+            pointsDiv.textContent = '0';
+        } else {
+            // Demais mostram a diferença
+            pointsDiv.textContent = '+' + formatarMoeda(gap);
+            pointsDiv.style.color = '#ff4444';
+        }
+        
+        tdPoints.appendChild(pointsDiv);
+        tr.appendChild(tdPoints);
+        
+        tbody.appendChild(tr);
+    });
+}
+
+// Funções antigas de gráfico removidas (não são mais necessárias)
+function atualizarGraficoTopVendedores(topVendedores, tipoPeriodo) {
+    // Função obsoleta - mantida para compatibilidade mas não faz nada
+    console.log('Função de gráfico obsoleta - usando tabela F1');
+}
+
+function renderizarPaginaRanking() {
+    // Função obsoleta - mantida para compatibilidade mas não faz nada
+    console.log('Paginação obsoleta - tabela F1 mostra todos');
+}
+
+function mudarPaginaRanking(novaPagina) {
+    // Função obsoleta - mantida para compatibilidade mas não faz nada
+    console.log('Paginação obsoleta - tabela F1 mostra todos');
+}
+
+function atualizarControlesPaginacao() {
+    // Função obsoleta - mantida para compatibilidade mas não faz nada
+    console.log('Paginação obsoleta - tabela F1 mostra todos');
+}
+
+// Utilitários
+function formatarMoeda(valor) {
+    const numero = parseFloat(valor) || 0;
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    }).format(numero);
+}
+
+function formatarMoedaSimples(valor) {
+    const numero = parseFloat(valor) || 0;
+    if (numero >= 1000000) {
+        return 'R$ ' + (numero / 1000000).toFixed(1) + 'M';
+    } else if (numero >= 1000) {
+        return 'R$ ' + (numero / 1000).toFixed(1) + 'K';
+    } else {
+        return 'R$ ' + numero.toFixed(0);
+    }
+}
+
+function formatarDataInput(data) {
+    if (!data) return '';
+    // Se for string no formato ISO já, retorne o prefixo
+    if (typeof data === 'string') return data.split('T')[0];
+    const yyyy = data.getFullYear();
+    const mm = String(data.getMonth() + 1).padStart(2, '0');
+    const dd = String(data.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatarDataGrafico(data, tipoPeriodo = 'dia') {
+    // Parse backend dates (YYYY-MM-DD) as local dates to avoid timezone shift
+    function parseISODateToLocal(dateStr) {
+        if (!dateStr) return new Date();
+        
+        // Handle ISO format with timezone (e.g., "2025-09-01T00:00:00Z")
+        if (typeof dateStr === 'string' && dateStr.includes('T')) {
+            // Extract just the date part before 'T' to avoid timezone conversion
+            const datePart = dateStr.split('T')[0];
+            if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+                const parts = datePart.split('-').map(Number);
+                return new Date(parts[0], parts[1] - 1, parts[2]);
+            }
+        }
+        
+        // Handle simple YYYY-MM-DD format
+        if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            const parts = dateStr.split('-').map(Number);
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+        
+        // fallback
+        return new Date(dateStr);
+    }
+    const dataObj = parseISODateToLocal(data);
+    
+    // Debug: log each date processing
+    console.log('formatarDataGrafico:', {
+        input: data,
+        tipoPeriodo: tipoPeriodo,
+        parsedDate: dataObj,
+        month: dataObj.getMonth() + 1, // 1-based month for clarity
+        year: dataObj.getFullYear()
+    });
+    
+    if (tipoPeriodo === 'ano' || tipoPeriodo === 'trimestre') {
+        // Para período anual e trimestral, mostrar apenas mês/ano
+        const formatted = dataObj.toLocaleDateString('pt-BR', {
+            month: 'short',
+            year: 'numeric'
+        });
+        console.log('formatarDataGrafico result:', formatted);
+        return formatted;
+    } else {
+        // Para outros períodos, mostrar dia/mês
+        const formatted = dataObj.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit'
+        });
+        console.log('formatarDataGrafico result:', formatted);
+        return formatted;
+    }
+}
+
+// Nota: Gráfico acumulado removido para o dashboard de bonés conforme requisitos
+
+// Função desabilitada - tela de loading removida
+function mostrarLoading(mostrar) {
+    // Não faz nada - loading removido do dashboard
+    return;
+}
+
+function mostrarNotificacao(mensagem, tipo = 'info') {
+    // Criar elemento de notificação
+    const notificacao = document.createElement('div');
+    notificacao.className = `notificacao ${tipo}`;
+    notificacao.innerHTML = `
+        <i class="fas fa-${tipo === 'error' ? 'exclamation-circle' : tipo === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+        <span>${mensagem}</span>
+    `;
+
+    // Estilos da notificação
+    notificacao.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${tipo === 'error' ? '#ef4444' : tipo === 'warning' ? '#f59e0b' : '#3b82f6'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        z-index: 1001;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+        animation: slideInRight 0.3s ease;
+    `;
+
+    document.body.appendChild(notificacao);
+
+    // Remover após 4 segundos
+    setTimeout(() => {
+        notificacao.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (notificacao.parentNode) {
+                notificacao.parentNode.removeChild(notificacao);
+            }
+        }, 300);
+    }, 4000);
+}
+
+function animarCartoes() {
+    const cartoes = document.querySelectorAll('.metric-card, .max-card');
+    cartoes.forEach((cartao, index) => {
+        cartao.style.animation = 'none';
+        setTimeout(() => {
+            cartao.style.animation = `fadeInUp 0.6s ease-out ${index * 0.1}s both`;
+        }, 50);
+    });
+}
+
+// Adicionar estilos de animação via CSS dinâmico
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);

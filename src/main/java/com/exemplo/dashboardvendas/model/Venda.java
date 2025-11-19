@@ -27,6 +27,9 @@ public class Venda {
     @Column(name = "valor_venda", nullable = false)
     private BigDecimal valorVenda;
     
+    @Column(name = "bone", length = 10)
+    private String bone;
+    
     // Construtores
     public Venda() {}
     
@@ -85,5 +88,13 @@ public class Venda {
     
     public void setValorVenda(BigDecimal valorVenda) {
         this.valorVenda = valorVenda;
+    }
+    
+    public String getBone() {
+        return bone;
+    }
+    
+    public void setBone(String bone) {
+        this.bone = bone;
     }
 }

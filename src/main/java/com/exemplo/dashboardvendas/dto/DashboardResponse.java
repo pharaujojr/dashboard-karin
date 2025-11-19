@@ -12,6 +12,8 @@ public class DashboardResponse {
     private MaxResponse maxResponse;
     private List<Map<String, Object>> dadosGrafico;
     private List<Map<String, Object>> top10Vendedores;
+    private List<Map<String, Object>> podiumVendedores;
+    private List<Map<String, Object>> podiumUnidades;
     private List<String> filiais;
     private List<String> vendedores;
     
@@ -59,6 +61,23 @@ public class DashboardResponse {
         this.top10Vendedores = top10Vendedores;
         this.filiais = filiais;
         this.vendedores = vendedores;
+    }
+
+    // Novos campos: pódio de vendedores e pódio de unidades (baseado na filial do vendedor)
+    public List<Map<String, Object>> getPodiumVendedores() {
+        return podiumVendedores;
+    }
+
+    public void setPodiumVendedores(List<Map<String, Object>> podiumVendedores) {
+        this.podiumVendedores = podiumVendedores;
+    }
+
+    public List<Map<String, Object>> getPodiumUnidades() {
+        return podiumUnidades;
+    }
+
+    public void setPodiumUnidades(List<Map<String, Object>> podiumUnidades) {
+        this.podiumUnidades = podiumUnidades;
     }
     
     // Getters e Setters

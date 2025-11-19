@@ -1,0 +1,145 @@
+/* Estilos para pódio do dashboard de bonés */
+
+.podium-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.podium-container h2.section-title {
+    margin-bottom: 1.5rem;
+    color: #1e3a8a;
+    font-size: 1.5rem;
+}
+
+.podium-grid {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.podium-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    color: white;
+    min-width: 180px;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.podium-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
+}
+
+.podium-item.podium-1 {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    min-height: 220px;
+    font-size: 1.1em;
+    order: 2;
+}
+
+.podium-item.podium-2 {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    min-height: 180px;
+    order: 1;
+}
+
+.podium-item.podium-3 {
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    min-height: 160px;
+    order: 3;
+}
+
+.podium-pos {
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.podium-nome {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+    max-width: 150px;
+}
+
+.podium-filial {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.95;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+}
+
+.podium-total {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Pódio de unidades (mais simples) */
+.podium-unidades {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.podium-unit {
+    padding: 1rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
+    color: white;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    transition: transform 0.2s ease;
+}
+
+.podium-unit:hover {
+    transform: scale(1.05);
+}
+
+.podium-unit .unit-name {
+    display: block;
+    font-weight: 700;
+    margin-top: 0.25rem;
+    font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+    .podium-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .podium-item {
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .podium-item.podium-1,
+    .podium-item.podium-2,
+    .podium-item.podium-3 {
+        order: initial;
+        min-height: auto;
+    }
+}
