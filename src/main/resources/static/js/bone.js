@@ -189,12 +189,11 @@ async function filtrarDados() {
         return elemento ? elemento.value : null;
     }
 
-    // Dashboard de bonés: usa sempre data do dia automaticamente (sem filtros)
-    const hoje = new Date();
-    const dataInicio = hoje.toISOString().split('T')[0];
-    const dataFim = dataInicio; // Mesmo dia
+    // Dashboard de bonés: período fixo da competição (19/11/2025 até 31/12/2025)
+    const dataInicio = '2025-11-19';
+    const dataFim = '2025-12-31';
     const vendedor = null; // Sem filtro de vendedor
-    const tipoPeriodo = 'dia'; // Sempre dia atual
+    const tipoPeriodo = 'personalizado'; // Período personalizado fixo
 
     // Evitar parsing ambíguo de 'YYYY-MM-DD' com new Date(str) (UTC vs local).
     function parseISODateToLocal(dateStr) {
