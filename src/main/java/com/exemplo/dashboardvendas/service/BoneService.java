@@ -30,6 +30,7 @@ public class BoneService {
 
         // Obter ranking completo (vendor, total) do repositório
         List<Object[]> dadosRaw = boneRepository.topVendedoresBone(dataInicio, dataFim);
+        logger.info("Total de vendedores encontrados: {}", dadosRaw != null ? dadosRaw.size() : 0);
 
         // Preparar pódio (3 primeiros)
         List<Map<String, Object>> podium = new ArrayList<>();
