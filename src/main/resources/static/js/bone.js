@@ -160,14 +160,18 @@ function definirPeriodoPredefinido(tipo) {
 
 // Carregar dados iniciais
 function carregarDadosIniciais() {
-    // Usar o valor atualmente selecionado no select de período (se houver)
-    const tipoSelect = document.getElementById('tipo-periodo');
-    const tipo = tipoSelect ? tipoSelect.value : 'mes';
-    if (tipo === 'personalizado') {
-        const filtrosPersonalizados = document.getElementById('filtros-data-personalizada');
-        if (filtrosPersonalizados) filtrosPersonalizados.classList.remove('hidden');
-    }
-    definirPeriodoPredefinido(tipo || 'mes');
+    // Período fixo: 19/11/2025 até 31/12/2025
+    const dataInicio = '2025-11-19';
+    const dataFim = '2025-12-31';
+    
+    const dataInicioElement = document.getElementById('data-inicio');
+    const dataFimElement = document.getElementById('data-fim');
+    
+    if (dataInicioElement) dataInicioElement.value = dataInicio;
+    if (dataFimElement) dataFimElement.value = dataFim;
+    
+    // Filtrar automaticamente
+    setTimeout(filtrarDados, 100);
 }
 
 // Filtrar dados
@@ -189,12 +193,12 @@ async function filtrarDados() {
         return elemento ? elemento.value : null;
     }
 
-    // Dashboard de bonés: usa sempre data do dia automaticamente (sem filtros)
-    const hoje = new Date();
-    const dataInicio = hoje.toISOString().split('T')[0];
-    const dataFim = dataInicio; // Mesmo dia
+    // Dashboard de bonés: usa período fixo de 19/11/2025 até 31/12/2025
+    // Período fixo: 19/11/2025 até 31/12/2025
+    const dataInicio = '2025-11-19';
+    const dataFim = '2025-12-31';
     const vendedor = null; // Sem filtro de vendedor
-    const tipoPeriodo = 'dia'; // Sempre dia atual
+    const tipoPeriodo = 'mes'; // Período mensal
 
     // Evitar parsing ambíguo de 'YYYY-MM-DD' com new Date(str) (UTC vs local).
     function parseISODateToLocal(dateStr) {
