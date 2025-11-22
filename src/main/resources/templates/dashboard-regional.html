@@ -60,13 +60,18 @@
         <div class="header">
             <div class="header-content">
                 <h1><i class="fas fa-chart-line"></i> Closing Day Nacional</h1>
-                <div class="nav-links">
-                    <a th:href="@{/}" class="nav-link">
-                        <i class="fas fa-home"></i> Dashboard Principal
-                    </a>
-                    <a th:href="@{/placar}" class="nav-link">
-                        <i class="fas fa-tv"></i> Placar
-                    </a>
+                <div class="date-filter">
+                    <div class="filter-group">
+                        <label for="dataInicio">De:</label>
+                        <input type="date" id="dataInicio" class="date-input">
+                    </div>
+                    <div class="filter-group">
+                        <label for="dataFim">Até:</label>
+                        <input type="date" id="dataFim" class="date-input">
+                    </div>
+                    <button id="btnFiltrar" class="filter-btn">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
                 </div>
             </div>
         </div>

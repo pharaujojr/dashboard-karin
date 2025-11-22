@@ -1,8 +1,8 @@
 // Constantes
 const API_BASE_URL = '/api';
-// Período: 27/10/2025 a 31/10/2025
-const DATA_INICIO = '2025-10-27';
-const DATA_FIM = '2025-10-31';
+// Período inicial (será substituído pelos inputs)
+let DATA_INICIO = '';
+let DATA_FIM = '';
 const META_PADRAO = 1000000;
 
 // Configuração de paginação
@@ -103,6 +103,16 @@ function iniciarRotacaoPaginas() {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Dashboard Regional: DOM carregado');
     
+    // Inicializar inputs de data com o mês atual
+    inicializarDatas();
+    
+    // Configurar evento do botão filtrar
+    document.getElementById('btnFiltrar').addEventListener('click', async () => {
+        console.log('Filtrando por período...');
+        atualizarPeriodoGlobal();
+        await carregarDados();
+    });
+
     // Aguardar um pouco para garantir que tudo está pronto
     await new Promise(resolve => setTimeout(resolve, 100));
     
@@ -111,6 +121,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Atualizar a cada 15 segundos
     setInterval(carregarDados, INTERVALO_ATUALIZACAO);
 });
+
+function inicializarDatas() {
+    const hoje = new Date();
+    const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    
+    const inputInicio = document.getElementById('dataInicio');
+    const inputFim = document.getElementById('dataFim');
+    
+    if (inputInicio && inputFim) {
+        inputInicio.value = primeiroDia.toISOString().split('T')[0];
+        inputFim.value = ultimoDia.toISOString().split('T')[0];
+        
+        // Atualizar variáveis globais
+        atualizarPeriodoGlobal();
+    }
+}
+
+function atualizarPeriodoGlobal() {
+    const inputInicio = document.getElementById('dataInicio');
+    const inputFim = document.getElementById('dataFim');
+    
+    if (inputInicio && inputFim) {
+        DATA_INICIO = inputInicio.value;
+        DATA_FIM = inputFim.value;
+        console.log(`Período atualizado: ${DATA_INICIO} a ${DATA_FIM}`);
+    }
+}
 
 // Carregar dados
 async function carregarDados() {
