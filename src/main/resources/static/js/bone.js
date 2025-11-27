@@ -475,59 +475,38 @@ function atualizarDashboard(dados, tipoPeriodo = 'dia', filtrosAtuais = null) {
 // Nota: Gráfico diário/agregado removido para o dashboard de bonés conforme requisitos
 
 
-// Atualizar tabela de classificação F1
+// Atualizar lista de vendedores com scroll horizontal (estilo dashboard principal)
 function atualizarTabelaClassificacao(vendedores) {
-    const tbody = document.getElementById('standings-body');
-    if (!tbody) return;
+    const container = document.getElementById('top-vendedores-grid');
+    if (!container) return;
     
-    // Limpar tabela
-    tbody.innerHTML = '';
+    // Limpar container
+    container.innerHTML = '';
     
     // Se não houver vendedores, mostrar mensagem
     if (!vendedores || vendedores.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: #cccccc;">Nenhum dado disponível</td></tr>';
+        container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #cccccc; width: 100%;">Nenhum dado disponível</div>';
         return;
     }
     
     // Calcular total do 1º lugar para gaps
     const primeiroTotal = vendedores.length > 0 ? (parseFloat(vendedores[0].total) || 0) : 0;
     
-    // Função para abreviar nome (3 primeiras letras)
-    function abreviarNome(nome) {
-        if (!nome || nome.length <= 3) return nome;
-        return nome.substring(0, 3).toUpperCase();
-    }
-    
     // Função para formatar nome da equipe
     function formatarEquipe(filial) {
         const filialUpper = (filial || '').toUpperCase();
         
-        // Formatação completa
         if (filialUpper.includes('LUCAS')) {
-            return 'LUCAS';
+            return 'TEAM LUCAS';
         } else if (filialUpper.includes('SORRISO')) {
-            return 'SORRISO';
+            return 'TEAM SORRISO';
         } else if (filialUpper.includes('SINOP')) {
-            return 'SINOP';
+            return 'TEAM SINOP';
         }
-        return filial || 'N/A';
+        return 'TEAM ' + (filial || 'N/A');
     }
     
-    // Função para abreviar equipe
-    function abreviarEquipe(filial) {
-        const filialUpper = (filial || '').toUpperCase();
-        
-        if (filialUpper.includes('LUCAS')) {
-            return 'TLR';
-        } else if (filialUpper.includes('SORRISO')) {
-            return 'TSR';
-        } else if (filialUpper.includes('SINOP')) {
-            return 'TSP';
-        }
-        return 'N/A';
-    }
-    
-    // Renderizar cada linha
+    // Renderizar cada vendedor como card
     vendedores.forEach((vendedor, index) => {
         const posicao = index + 1;
         const nome = vendedor.nome ? vendedor.nome.toUpperCase() : 'SEM NOME';
@@ -537,65 +516,104 @@ function atualizarTabelaClassificacao(vendedores) {
         // Calcular diferença para o 1º
         const gap = primeiroTotal - total;
         
-        const tr = document.createElement('tr');
+        // Criar card
+        const card = document.createElement('div');
+        card.className = 'vendedor-card';
+        if (posicao === 1) card.classList.add('primeiro-lugar');
         
-        // Coluna Posição
-        const tdPos = document.createElement('td');
-        tdPos.style.textAlign = 'center';
-        const posBox = document.createElement('div');
-        posBox.className = posicao === 1 ? 'pos-box first' : 'pos-box other';
-        posBox.textContent = posicao;
-        tdPos.appendChild(posBox);
-        tr.appendChild(tdPos);
+        card.innerHTML = `
+            <div class="vendedor-posicao ${posicao === 1 ? 'pos-primeiro' : 'pos-outro'}">
+                ${posicao}º
+            </div>
+            <div class="vendedor-info">
+                <div class="vendedor-nome">${nome}</div>
+                <div class="vendedor-equipe">${formatarEquipe(filial)}</div>
+            </div>
+            <div class="vendedor-stats">
+                <div class="vendedor-total">${formatarMoeda(total)}</div>
+                <div class="vendedor-gap">
+                    ${posicao === 1 ? '<span class="lider-badge">🏆 LÍDER</span>' : `<span class="gap-badge">+${formatarMoeda(gap)}</span>`}
+                </div>
+            </div>
+        `;
         
-        // Coluna Piloto
-        const tdDriver = document.createElement('td');
-        const driverSpan = document.createElement('span');
-        driverSpan.className = 'driver-name';
-        driverSpan.textContent = nome;
-        driverSpan.setAttribute('data-mobile', abreviarNome(nome));
-        tdDriver.appendChild(driverSpan);
-        tr.appendChild(tdDriver);
+        container.appendChild(card);
+    });
+    
+    // Transformar container em grid de largada e configurar botões de scroll
+    container.classList.add('starting-grid');
+    configurarScrollVendedores();
+}
+
+// Configurar scroll horizontal para vendedores
+function configurarScrollVendedores() {
+    const container = document.getElementById('top-vendedores-grid');
+    const btnLeft = document.getElementById('scroll-left-vendedores');
+    const btnRight = document.getElementById('scroll-right-vendedores');
+    
+    if (!container || !btnLeft || !btnRight) return;
+    
+    // Verificar se precisa de scroll
+    function atualizarBotoesScroll() {
+        const scrollLeft = container.scrollLeft;
+        const scrollWidth = container.scrollWidth;
+        const clientWidth = container.clientWidth;
         
-        // Coluna Team
-        const tdTeam = document.createElement('td');
-        const teamSpan = document.createElement('span');
-        teamSpan.className = 'team-name';
-        teamSpan.textContent = formatarEquipe(filial);
-        teamSpan.setAttribute('data-mobile', abreviarEquipe(filial));
-        tdTeam.appendChild(teamSpan);
-        tr.appendChild(tdTeam);
-        
-        // Coluna Pontos (apenas diferença para o 1º)
-        const tdPoints = document.createElement('td');
-        const pointsDiv = document.createElement('div');
-        pointsDiv.className = 'points-value';
-        
-        if (posicao === 1) {
-            // 1º lugar mostra 0
-            pointsDiv.textContent = '0';
+        // Desabilitar botão esquerdo se estiver no início
+        if (scrollLeft <= 0) {
+            btnLeft.style.opacity = '0.3';
+            btnLeft.style.pointerEvents = 'none';
         } else {
-            // Demais mostram a diferença
-            pointsDiv.textContent = '+' + formatarMoeda(gap);
-            pointsDiv.style.color = '#ff4444';
+            btnLeft.style.opacity = '1';
+            btnLeft.style.pointerEvents = 'auto';
         }
         
-        tdPoints.appendChild(pointsDiv);
-        tr.appendChild(tdPoints);
+        // Desabilitar botão direito se estiver no fim
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+            btnRight.style.opacity = '0.3';
+            btnRight.style.pointerEvents = 'none';
+        } else {
+            btnRight.style.opacity = '1';
+            btnRight.style.pointerEvents = 'auto';
+        }
         
-        tbody.appendChild(tr);
-    });
+        // Esconder botões se não houver scroll
+        if (scrollWidth <= clientWidth) {
+            btnLeft.style.display = 'none';
+            btnRight.style.display = 'none';
+        } else {
+            btnLeft.style.display = 'flex';
+            btnRight.style.display = 'flex';
+        }
+    }
+    
+    // Scroll suave
+    function scrollSuave(direcao) {
+        const scrollAmount = container.clientWidth * 0.8;
+        container.scrollBy({
+            left: direcao * scrollAmount,
+            behavior: 'smooth'
+        });
+    }
+    
+    // Event listeners
+    btnLeft.onclick = () => scrollSuave(-1);
+    btnRight.onclick = () => scrollSuave(1);
+    container.addEventListener('scroll', atualizarBotoesScroll);
+    
+    // Atualizar estado inicial
+    atualizarBotoesScroll();
 }
 
 // Funções antigas de gráfico removidas (não são mais necessárias)
 function atualizarGraficoTopVendedores(topVendedores, tipoPeriodo) {
     // Função obsoleta - mantida para compatibilidade mas não faz nada
-    console.log('Função de gráfico obsoleta - usando tabela F1');
+    console.log('Função de gráfico obsoleta - usando lista scrollável F1');
 }
 
 function renderizarPaginaRanking() {
     // Função obsoleta - mantida para compatibilidade mas não faz nada
-    console.log('Paginação obsoleta - tabela F1 mostra todos');
+    console.log('Paginação obsoleta - lista scrollável mostra todos');
 }
 
 function mudarPaginaRanking(novaPagina) {

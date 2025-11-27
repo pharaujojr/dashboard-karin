@@ -57,57 +57,25 @@
                         <div class="podium-total">R$ 0,00</div>
                     </div>
                 </div>
-
-                <h2 class="section-title cartoon-title" style="margin-top:2rem;">
-                    🏁 EQUIPES VENCEDORAS 🏁
-                </h2>
-                <p class="podium-question">🏢 Qual equipe está dominando a pista?</p>
-                <div class="podium-grid" id="podium-unidades">
-                    <div class="podium-item podium-unit-item podium-2" id="podium-unit-2">
-                        <div class="podium-pos">2º</div>
-                        <div class="podium-nome">-</div>
-                        <div class="podium-total">R$ 0,00</div>
-                    </div>
-                    <div class="podium-item podium-unit-item podium-1" id="podium-unit-1">
-                        <div class="podium-pos">1º</div>
-                        <div class="podium-nome">-</div>
-                        <div class="podium-total">R$ 0,00</div>
-                    </div>
-                    <div class="podium-item podium-unit-item podium-3" id="podium-unit-3">
-                        <div class="podium-pos">3º</div>
-                        <div class="podium-nome">-</div>
-                        <div class="podium-total">R$ 0,00</div>
-                    </div>
-                </div>
             </div>
         </section>
 
         <!-- Ranking Geral da Corrida -->
         <section class="max-section" id="section-destaques">
             <h2 class="section-title cartoon-title">
-                🏁 TABELA DE CLASSIFICAÇÃO 🏁
+                🏁 CLASSIFICAÇÃO DA CORRIDA 🏁
             </h2>
             <p class="podium-question">Quem mais está na disputa pela pole position?</p>
-            <div class="max-grid">
-                <div class="max-card top-vendedores full-width">
-                    <div class="max-content">
-                        <div class="f1-standings-table">
-                            <table class="standings-table" id="standings-table">
-                                <thead>
-                                    <tr>
-                                        <th class="col-pos">POS</th>
-                                        <th class="col-driver">PILOTO</th>
-                                        <th class="col-team">EQUIPE</th>
-                                        <th class="col-points">LAP</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="standings-body">
-                                    <!-- Dados carregados via JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+            <div class="top-vendedores-scroll-container">
+                <button class="scroll-btn scroll-left" id="scroll-left-vendedores" aria-label="Rolar para esquerda">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="top-vendedores-grid" id="top-vendedores-grid">
+                    <!-- Carregado via JS -->
                 </div>
+                <button class="scroll-btn scroll-right" id="scroll-right-vendedores" aria-label="Rolar para direita">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
         </section>
         

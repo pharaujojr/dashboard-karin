@@ -6,24 +6,85 @@
 .competition-body {
     background: linear-gradient(180deg, #1a1a1a 0%, #000000 50%, #0a0a0a 100%);
     min-height: 100vh;
+    height: 100vh;
+    overflow-y: auto;
     font-family: 'Arial Black', 'Impact', 'Helvetica', sans-serif;
     position: relative;
+}
+
+/* Override específico para 720p: permitir wrap dentro do card e exibir todo conteúdo
+   sem cortar, mantendo cards compactos e sem causar scroll vertical da página. */
+@media (max-width: 1366px) and (max-height: 768px) {
+    .vendedor-card {
+        max-height: none !important;
+        min-height: 72px;
+        overflow: visible !important; /* mostrar conteúdo que quebrou linha */
+        padding: 0.45rem 0.6rem;
+    }
+
+    .vendedor-info {
+        padding-right: 0.3rem;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .vendedor-nome {
+        font-size: 0.95rem;
+        line-height: 1.05;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        display: block;
+        max-width: 100%;
+    }
+
+    .vendedor-equipe {
+        font-size: 0.75rem;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .vendedor-stats {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.25rem 0.5rem;
+        align-items: center;
+    }
+
+    .vendedor-total {
+        font-size: 1.05rem;
+        white-space: nowrap;
+    }
+
+    .vendedor-gap {
+        font-size: 0.85rem;
+    }
+
+    /* reduzir tamanho do badge para não sobrepor conteúdo */
+    .vendedor-posicao {
+        width: 34px;
+        height: 34px;
+        top: 0.6rem;
+        right: 0.6rem;
+        font-size: 0.95rem;
+    }
 }
 
 .competition-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 1rem 2rem 2rem 2rem;
+    padding: 0.5rem 1.5rem 1rem 1.5rem;
 }
 
 /* Header F1 Racing */
 .competition-header {
     text-align: center;
-    padding: 0.8rem 1.5rem;
+    padding: 0.5rem 1rem;
     background: #1a1a1a;
     border-radius: 8px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     position: relative;
     overflow: hidden;
 }
@@ -108,7 +169,7 @@
 }
 
 .competition-title {
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     font-weight: 900;
     color: #ffffff;
     text-shadow: 
@@ -117,19 +178,19 @@
         1px -1px 0 #dc0000,
         -1px 1px 0 #dc0000;
     letter-spacing: 3px;
-    margin: 0.5rem 0;
+    margin: 0.3rem 0;
     position: relative;
     z-index: 1;
     text-transform: uppercase;
 }
 
 .competition-subtitle {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #ffffff;
     position: relative;
     z-index: 1;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.2rem;
 }
 
 .subtitle-highlight {
@@ -140,7 +201,7 @@
 }
 
 .subtitle-arena {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: #ffffff;
     opacity: 0.95;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
@@ -150,9 +211,9 @@
 .podium-section,
 .max-section {
     background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
-    border-radius: 15px;
-    padding: 2rem;
-    margin: 1.5rem 0;
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin: 1rem 0;
     box-shadow: 
         0 10px 30px rgba(0, 0, 0, 0.8),
         inset 0 1px 0 rgba(255,255,255,0.1);
@@ -179,7 +240,7 @@
 }
 
 .cartoon-title {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     font-weight: 900;
     text-align: center;
     color: #dc0000;
@@ -188,15 +249,15 @@
     text-shadow: 
         2px 2px 0 rgba(0,0,0,0.5),
         0 0 20px rgba(220, 0, 0, 0.5);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.3rem;
 }
 
 .podium-question {
     text-align: center;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: #cccccc;
-    margin: 0.5rem 0 1.5rem 0;
+    margin: 0.3rem 0 1rem 0;
     font-family: 'Arial', sans-serif;
 }
 
@@ -705,3 +766,470 @@
 #topVendedoresChart {
     background: transparent !important;
 }
+
+/* ============================================
+   LISTA SCROLLÁVEL DE VENDEDORES (ESTILO DASHBOARD)
+   ============================================ */
+
+.top-vendedores-scroll-container {
+    position: relative;
+    margin: 1rem 0;
+}
+
+.top-vendedores-grid {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 1rem 0.5rem;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: #dc0000 #1a1a1a;
+}
+
+.top-vendedores-grid::-webkit-scrollbar {
+    height: 8px;
+}
+
+.top-vendedores-grid::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 10px;
+}
+
+.top-vendedores-grid::-webkit-scrollbar-thumb {
+    background: #dc0000;
+    border-radius: 10px;
+}
+
+.top-vendedores-grid::-webkit-scrollbar-thumb:hover {
+    background: #ff0000;
+}
+
+/* ============================================
+   GRID DE LARGADA (simula a formação de largada)
+   - 1º lugar centralizado (spans both columns)
+   - demais posições em pares por fila
+   - mantém overflow-x para rolagem horizontal quando necessário
+   ============================================ */
+.starting-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap; /* permite múltiplas filas */
+    gap: 0.8rem 1rem; /* row-gap column-gap */
+    align-content: flex-start;
+    padding: 0.8rem 0.5rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    height: calc(2 * 1fr + 360px); /* espaço para duas fileiras de cards (ajustável) */
+}
+
+.starting-grid .vendedor-card {
+    flex: 0 0 220px; /* cards menores para caber duas fileiras */
+    box-sizing: border-box;
+    transition: transform 0.25s ease;
+}
+
+/* Primeiro lugar destacado: ocupa largura equivalente a dois cards e fica levemente para frente */
+.starting-grid .vendedor-card.primeiro-lugar {
+    /* manter mesmo tamanho dos outros cards; destacar apenas visualmente */
+    flex: 0 0 220px;
+    max-width: 220px;
+    transform: none; /* sem deslocamento vertical */
+    z-index: 6;
+}
+
+/* Zig-zag leve: alternância vertical por posição para simular a largada */
+.starting-grid .vendedor-card:nth-child(odd):not(.primeiro-lugar) {
+    transform: translateY(-12px);
+}
+.starting-grid .vendedor-card:nth-child(even) {
+    transform: translateY(8px);
+}
+
+/* Responsivo: manter duas fileiras em 720p, ajustar em telas pequenas */
+@media (max-width: 1366px) and (max-height: 768px) {
+    .starting-grid {
+        height: auto;
+    }
+    .starting-grid .vendedor-card {
+        flex: 0 0 200px;
+    }
+    .starting-grid .vendedor-card.primeiro-lugar {
+        flex: 0 0 200px;
+        max-width: 200px;
+        transform: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .starting-grid .vendedor-card {
+        flex: 0 0 180px;
+    }
+    .starting-grid .vendedor-card.primeiro-lugar {
+        flex: 0 0 180px;
+        max-width: 180px;
+    }
+}
+
+@media (max-width: 600px) {
+    .starting-grid {
+        height: auto;
+        gap: 0.6rem;
+    }
+    .starting-grid .vendedor-card {
+        flex: 0 0 220px;
+        transform: none;
+    }
+    .starting-grid .vendedor-card.primeiro-lugar {
+        flex: 0 0 100%;
+        max-width: 100%;
+        transform: none;
+    }
+}
+
+/* Card de Vendedor */
+.vendedor-card {
+    /* width controlled by .starting-grid flex-basis; keep card compact vertically */
+    background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+    border-radius: 12px;
+    padding: 0.6rem; /* reduzir padding vertical */
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    border: 2px solid #333;
+    transition: all 0.22s ease;
+    position: relative;
+    overflow: hidden;
+    min-height: 88px;
+    max-height: 140px;
+}
+
+.vendedor-card:hover {
+    transform: translateY(-5px);
+    border-color: #dc0000;
+    box-shadow: 0 8px 20px rgba(220, 0, 0, 0.4);
+}
+
+.vendedor-card.primeiro-lugar {
+    border: 3px solid #ffd700;
+    background: linear-gradient(135deg, #3d3d1a 0%, #2a2a1a 100%);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.vendedor-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #dc0000 0%, #ff4444 50%, #dc0000 100%);
+}
+
+.vendedor-card.primeiro-lugar::before {
+    background: linear-gradient(90deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+}
+
+/* Posição do Vendedor */
+.vendedor-posicao {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.vendedor-posicao.pos-primeiro {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #000;
+    border: 3px solid #ffd700;
+}
+
+.vendedor-posicao.pos-outro {
+    background: linear-gradient(135deg, #808080 0%, #a0a0a0 100%);
+    color: #000;
+    border: 2px solid #666;
+}
+
+/* Info do Vendedor */
+.vendedor-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-right: 0.5rem;
+    align-items: center;
+    text-align: center;
+}
+
+.vendedor-nome {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.vendedor-equipe {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #dc0000;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.vendedor-card.primeiro-lugar .vendedor-equipe {
+    color: #ffd700;
+}
+
+/* Stats do Vendedor */
+.vendedor-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-top: 0.8rem;
+    border-top: 2px solid rgba(220, 0, 0, 0.3);
+}
+
+.vendedor-card.primeiro-lugar .vendedor-stats {
+    border-top-color: rgba(255, 215, 0, 0.3);
+}
+
+.vendedor-total {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.vendedor-gap {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.lider-badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #000;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.gap-badge {
+    color: #ff4444;
+    font-size: 1rem;
+    font-weight: 900;
+}
+
+/* Botões de Scroll */
+.scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #dc0000 0%, #b00000 100%);
+    border: none;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(220, 0, 0, 0.4);
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.scroll-btn:hover {
+    background: linear-gradient(135deg, #ff0000 0%, #dc0000 100%);
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 16px rgba(220, 0, 0, 0.6);
+}
+
+.scroll-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.scroll-btn.scroll-left {
+    left: -20px;
+}
+
+.scroll-btn.scroll-right {
+    right: -20px;
+}
+
+/* Responsivo 720p */
+@media (max-width: 1366px) and (max-height: 768px) {
+    .competition-container {
+        padding: 0.3rem 1rem 0.5rem 1rem;
+    }
+    
+    .competition-header {
+        padding: 0.4rem 0.8rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .competition-title {
+        font-size: 1.1rem;
+    }
+    
+    .podium-section,
+    .max-section {
+        padding: 0.8rem;
+        margin: 0.5rem 0;
+    }
+    
+    .cartoon-title {
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .podium-question {
+        font-size: 0.75rem;
+        margin: 0.2rem 0 0.5rem 0;
+    }
+    
+    .podium-grid {
+        gap: 0.8rem;
+        margin: 0.5rem auto;
+    }
+    
+    .podium-item {
+        min-width: 120px;
+        max-width: 160px;
+        padding: 0.8rem 0.6rem;
+    }
+    
+    .podium-item.podium-1 {
+        min-height: 140px;
+    }
+    
+    .podium-item.podium-2 {
+        min-height: 120px;
+    }
+    
+    .podium-item.podium-3 {
+        min-height: 100px;
+    }
+    
+    .podium-pos {
+        font-size: 2rem;
+    }
+    
+    .podium-1 .podium-pos {
+        font-size: 2.5rem;
+    }
+    
+    .podium-nome {
+        font-size: 0.8rem;
+    }
+    
+    .podium-1 .podium-nome {
+        font-size: 0.9rem;
+    }
+    
+    .podium-filial {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.5rem;
+    }
+    
+    .podium-total {
+        font-size: 1rem;
+    }
+    
+    .podium-1 .podium-total {
+        font-size: 1.2rem;
+    }
+    
+    .podium-item.podium-1::after {
+        top: -20px;
+        font-size: 1.5rem;
+    }
+    
+    .vendedor-card {
+        min-width: 240px;
+        max-width: 240px;
+        padding: 1rem;
+    }
+    
+    .vendedor-nome {
+        font-size: 0.95rem;
+    }
+    
+    .vendedor-equipe {
+        font-size: 0.75rem;
+    }
+    
+    .vendedor-total {
+        font-size: 1.2rem;
+    }
+    
+    .vendedor-posicao {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Escalonamento para 1080p */
+@media (min-width: 1920px) and (min-height: 1080px) {
+    .competition-container {
+        max-width: 1800px;
+        padding: 1rem 2.5rem 2rem 2.5rem;
+    }
+    
+    .competition-title {
+        font-size: 2rem;
+    }
+    
+    .cartoon-title {
+        font-size: 1.8rem;
+    }
+    
+    .podium-item {
+        min-width: 220px;
+        max-width: 280px;
+    }
+    
+    .podium-item.podium-1 {
+        min-height: 280px;
+    }
+    
+    .podium-item.podium-2 {
+        min-height: 230px;
+    }
+    
+    .podium-item.podium-3 {
+        min-height: 200px;
+    }
+    
+    .vendedor-card {
+        min-width: 340px;
+        max-width: 340px;
+        padding: 1.5rem;
+    }
+    
+    .vendedor-nome {
+        font-size: 1.3rem;
+    }
+    
+    .vendedor-total {
+        font-size: 1.8rem;
+    }
+}
+
