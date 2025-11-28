@@ -531,13 +531,92 @@ function atualizarTabelaClassificacao(vendedores) {
             </div>
             <div class="vendedor-stats">
                 <div class="vendedor-total">${formatarMoeda(total)}</div>
-                <div class="vendedor-gap">
-                    ${posicao === 1 ? '<span class="lider-badge">🏆 LÍDER</span>' : `<span class="gap-badge">+${formatarMoeda(gap)}</span>`}
-                </div>
             </div>
         `;
         
         container.appendChild(card);
+
+        // Deterministic grid placement: cada coluna tem um par (col = ceil(pos/2))
+        try {
+            const col = Math.ceil(posicao / 2);
+            // ímpares na linha de baixo (2), pares na linha de cima (1)
+            const row = (posicao % 2 === 1) ? 2 : 1;
+            card.style.gridColumn = String(col);
+            card.style.gridRow = String(row);
+
+            // Depth and offset: compute X offset proportionally using computed grid column width
+            let offsetX = 0;
+            let offsetY = 0;
+            let z = 4;
+
+            try {
+                const cs = window.getComputedStyle(container);
+                // grid-auto-columns can be like '260px' or '16rem'
+                const gridAutoCols = cs.getPropertyValue('grid-auto-columns') || '220px';
+                const gapFull = cs.getPropertyValue('gap') || cs.getPropertyValue('grid-gap') || '0px 16px';
+                const colGap = (gapFull.split(/\s+/)[1]) || gapFull.split(/\s+/)[0];
+
+                function toPx(value) {
+                    if (!value) return 220;
+                    value = value.trim();
+                    if (value.endsWith('px')) return parseFloat(value);
+                    if (value.endsWith('rem')) {
+                        const root = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+                        return parseFloat(value) * root;
+                    }
+                    if (value.endsWith('%')) return 0; // not expected
+                    return parseFloat(value) || 220;
+                }
+
+                const colWidthPx = toPx(gridAutoCols);
+                const gapPx = toPx(colGap);
+
+                // compute offsets proportional to column width so layout scales in fullscreen
+                const baseTopOffset = Math.round(colWidthPx / 2); // top row starts at half the bottom card width
+                const colIncrement = Math.max(20, Math.round(colWidthPx * 0.12)); // bigger extra shift per column to avoid overlap
+
+                if (posicao === 1) {
+                    offsetY = 6; // same as bottom items
+                    z = 7;
+                    card.style.gridColumn = '1';
+                    card.style.gridRow = '2';
+                } else if (posicao % 2 === 0) {
+                    // top row: visually start half-column to the right of first bottom card
+                    offsetY = -12;
+                    z = 6;
+                    card.classList.add('top-row');
+                } else {
+                    offsetY = 6;
+                    z = 4;
+                }
+
+                // Apply X offset on the card itself (not on inner content) so the whole card shifts
+                // X offset proportional to column to avoid overlap in fullscreen
+                const offsetXCard = (posicao % 2 === 0)
+                    ? baseTopOffset + (col - 1) * colIncrement
+                    : (col - 1) * colIncrement;
+
+                card.style.transform = `translate(${offsetXCard}px, ${offsetY}px)`;
+                card.style.zIndex = String(z);
+            } catch (err) {
+                // fallback to prior simple offsets
+                if (posicao === 1) {
+                    card.style.transform = 'translate(0px, 6px)';
+                    card.style.zIndex = '7';
+                    card.style.gridColumn = '1';
+                    card.style.gridRow = '2';
+                } else if (posicao % 2 === 0) {
+                    card.style.transform = 'translate(12px, -12px)';
+                    card.style.zIndex = '6';
+                } else {
+                    card.style.transform = 'translate(0px, 6px)';
+                    card.style.zIndex = '4';
+                }
+            }
+        } catch (e) {
+            // Não bloquear render caso algo dê errado
+            console.warn('Erro ao posicionar card na grid:', e);
+        }
     });
     
     // Transformar container em grid de largada e configurar botões de scroll

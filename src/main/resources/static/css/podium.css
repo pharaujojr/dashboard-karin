@@ -15,41 +15,23 @@
 /* Override específico para 720p: permitir wrap dentro do card e exibir todo conteúdo
    sem cortar, mantendo cards compactos e sem causar scroll vertical da página. */
 @media (max-width: 1366px) and (max-height: 768px) {
-    .vendedor-card {
-        max-height: none !important;
-        min-height: 72px;
-        overflow: visible !important; /* mostrar conteúdo que quebrou linha */
-        padding: 0.45rem 0.6rem;
+    .starting-grid {
+        display: grid;
+        grid-auto-flow: column; /* fill columns left to right */
+        grid-auto-columns: 220px; /* each column width corresponds to a card */
+        grid-template-rows: auto auto; /* two rows: top (even positions) and bottom (odd) */
+        gap: 0.6rem 1rem; /* row-gap column-gap */
+        align-items: start;
+        padding: 0.8rem 0.5rem;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
     }
 
-    .vendedor-info {
-        padding-right: 0.3rem;
-        align-items: flex-start;
-        text-align: left;
-    }
-
-    .vendedor-nome {
-        font-size: 0.95rem;
-        line-height: 1.05;
-        white-space: normal;
-        word-break: break-word;
-        overflow-wrap: anywhere;
-        display: block;
-        max-width: 100%;
-    }
-
-    .vendedor-equipe {
-        font-size: 0.75rem;
-        white-space: normal;
-        word-break: break-word;
-        overflow-wrap: anywhere;
-    }
-
-    .vendedor-stats {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 0.25rem 0.5rem;
-        align-items: center;
+    .starting-grid .vendedor-card {
+        width: 100%;
+        box-sizing: border-box;
+        transition: transform 0.18s ease;
     }
 
     .vendedor-total {
@@ -807,84 +789,67 @@
 
 /* ============================================
    GRID DE LARGADA (simula a formação de largada)
-   - 1º lugar centralizado (spans both columns)
-   - demais posições em pares por fila
-   - mantém overflow-x para rolagem horizontal quando necessário
+   - Alternância por coluna: pares no topo, ímpares embaixo
+   - Layout em grid com fluxo por colunas para rolagem horizontal
+   - Primeiro colocado destacado visualmente, sem alterar tamanho
    ============================================ */
 .starting-grid {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap; /* permite múltiplas filas */
-    gap: 0.8rem 1rem; /* row-gap column-gap */
-    align-content: flex-start;
+    display: grid;
+    grid-auto-flow: column; /* preenche por colunas: col1(row1,row2), col2(row1,row2)... */
+    grid-auto-columns: 500px; /* largura de cada "coluna" / card (aumentada para prevenir sobreposição) */
+    grid-template-rows: auto auto; /* duas fileiras: topo (pares) e base (ímpares) */
+    gap: 2.6rem 2rem; /* row-gap column-gap - aumentar para evitar sobreposição vertical e horizontal */
+    align-items: start;
     padding: 0.8rem 0.5rem;
     overflow-x: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    height: calc(2 * 1fr + 360px); /* espaço para duas fileiras de cards (ajustável) */
 }
 
-.starting-grid .vendedor-card {
-    flex: 0 0 220px; /* cards menores para caber duas fileiras */
+/* garantir que cada filho ocupe toda a largura da coluna */
+.starting-grid > * {
+    width: 100%;
     box-sizing: border-box;
-    transition: transform 0.25s ease;
+    transition: transform 0.22s ease;
 }
 
-/* Primeiro lugar destacado: ocupa largura equivalente a dois cards e fica levemente para frente */
-.starting-grid .vendedor-card.primeiro-lugar {
-    /* manter mesmo tamanho dos outros cards; destacar apenas visualmente */
-    flex: 0 0 220px;
-    max-width: 220px;
-    transform: none; /* sem deslocamento vertical */
-    z-index: 6;
+/* Paridade: ímpares -> segunda linha (embaixo), pares -> primeira linha (topo) */
+/* Nota: posicionamento mais preciso é definido via JS (inline styles) para evitar conflitos
+   de auto-placement do grid quando usamos parity + grid-auto-flow: column. As regras abaixo
+   servem apenas como fallback em browsers sem JS. */
+.starting-grid > *:nth-child(odd) {
+    grid-row: 2;
+}
+.starting-grid > *:nth-child(even) {
+    grid-row: 1;
 }
 
-/* Zig-zag leve: alternância vertical por posição para simular a largada */
-.starting-grid .vendedor-card:nth-child(odd):not(.primeiro-lugar) {
-    transform: translateY(-12px);
-}
-.starting-grid .vendedor-card:nth-child(even) {
-    transform: translateY(8px);
+/* Primeiro lugar: destaque visual (não altera tamanho). JS força sua posição na coluna 1 */
+.starting-grid > .primeiro-lugar {
+    /* allow JS to control transform so 1st stays aligned with other bottom-row items */
+    z-index: 8;
 }
 
-/* Responsivo: manter duas fileiras em 720p, ajustar em telas pequenas */
+/* Responsividade: ajustar largura das colunas em telas menores */
 @media (max-width: 1366px) and (max-height: 768px) {
     .starting-grid {
-        height: auto;
-    }
-    .starting-grid .vendedor-card {
-        flex: 0 0 200px;
-    }
-    .starting-grid .vendedor-card.primeiro-lugar {
-        flex: 0 0 200px;
-        max-width: 200px;
-        transform: none;
+        grid-auto-columns: 200px;
     }
 }
 
 @media (max-width: 900px) {
-    .starting-grid .vendedor-card {
-        flex: 0 0 180px;
-    }
-    .starting-grid .vendedor-card.primeiro-lugar {
-        flex: 0 0 180px;
-        max-width: 180px;
+    .starting-grid {
+        grid-auto-columns: 180px;
     }
 }
 
 @media (max-width: 600px) {
     .starting-grid {
-        height: auto;
+        grid-auto-columns: 220px; /* for narrow phones keep comfortable width and allow single-column flow */
         gap: 0.6rem;
     }
-    .starting-grid .vendedor-card {
-        flex: 0 0 220px;
-        transform: none;
-    }
-    .starting-grid .vendedor-card.primeiro-lugar {
-        flex: 0 0 100%;
-        max-width: 100%;
-        transform: none;
+    .starting-grid > * {
+        transform: none; /* remove offsets on very small screens for readability */
     }
 }
 
@@ -901,12 +866,13 @@
     transition: all 0.22s ease;
     position: relative;
     overflow: hidden;
-    min-height: 88px;
-    max-height: 140px;
+    min-height: 100px;
+    max-height: 150px;
+    padding-bottom: 1.2rem; /* space for bottom ribbon */
 }
 
 .vendedor-card:hover {
-    transform: translateY(-5px);
+    /* Avoid overriding layout transform (set by JS). Keep visual hover but no transform. */
     border-color: #dc0000;
     box-shadow: 0 8px 20px rgba(220, 0, 0, 0.4);
 }
@@ -947,12 +913,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.vendedor-posicao.pos-primeiro {
-    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-    color: #000;
-    border: 3px solid #ffd700;
-}
-
+.vendedor-posicao.pos-primeiro,
 .vendedor-posicao.pos-outro {
     background: linear-gradient(135deg, #808080 0%, #a0a0a0 100%);
     color: #000;
@@ -965,8 +926,13 @@
     flex-direction: column;
     gap: 0.4rem;
     padding-right: 0.5rem;
-    align-items: center;
-    text-align: center;
+    align-items: flex-start; /* left aligned content */
+    text-align: left;
+}
+
+/* Visual left offset for top-row cards: shift internal content without moving the card box */
+.vendedor-card.top-row .vendedor-info {
+    padding-left: 18px;
 }
 
 .vendedor-nome {
@@ -998,6 +964,7 @@
     margin-top: 0.5rem;
     padding-top: 0.8rem;
     border-top: 2px solid rgba(220, 0, 0, 0.3);
+    align-items: flex-start; /* keep totals left-aligned */
 }
 
 .vendedor-card.primeiro-lugar .vendedor-stats {
@@ -1005,7 +972,7 @@
 }
 
 .vendedor-total {
-    font-size: 1.4rem;
+    font-size: 1.15rem;
     font-weight: 900;
     color: #ffffff;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -1014,18 +981,16 @@
 .vendedor-gap {
     font-size: 0.9rem;
     font-weight: 700;
-}
-
-.lider-badge {
-    display: inline-block;
-    padding: 0.3rem 0.8rem;
-    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-    color: #000;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 900;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+    /* no ribbon: keep inline, no absolute positioning */
+    position: static;
+    right: auto;
+    bottom: auto;
+    background: transparent;
+    color: #ff4444;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    white-space: nowrap;
 }
 
 .gap-badge {
@@ -1093,7 +1058,59 @@
         padding: 0.8rem;
         margin: 0.5rem 0;
     }
+
+    /* Reduce gap-badge font and ensure ribbon fits inside small cards */
+    .vendedor-gap {
+        font-size: 0.64rem;
+        padding: 0;
+    }
+
+    /* Ensure card height is flexible to avoid clipping */
+    .vendedor-card {
+        min-height: 110px;
+        max-height: 170px;
+        padding-bottom: 1.4rem;
+    }
+
+    /* make grid columns slightly wider on constrained 720p to avoid overlap */
+    .starting-grid {
+        grid-auto-columns: 220px;
+        gap: 2.4rem 1.6rem;
+    }
     
+
+/* Large/fullscreen adjustments (1080p/large monitors) */
+/* Fullscreen / large monitors: reduce sizes so more cards fit on screen */
+@media (min-width: 1600px), (min-height: 1000px) {
+    .starting-grid {
+        grid-auto-columns: 360px; /* slightly narrower columns on very large screens */
+        gap: 1.8rem 1.4rem; /* reduce gaps to fit more columns */
+    }
+
+    .vendedor-card {
+        min-height: 88px;
+        max-height: 130px;
+        padding: 0.45rem 0.6rem;
+        padding-bottom: 1rem;
+        border-radius: 10px;
+    }
+
+    .vendedor-nome {
+        font-size: 0.95rem;
+    }
+
+    .vendedor-equipe {
+        font-size: 0.75rem;
+    }
+
+    .vendedor-total {
+        font-size: 0.95rem; /* reduce to help fitting */
+    }
+
+    .vendedor-gap {
+        font-size: 0.7rem;
+    }
+}
     .cartoon-title {
         font-size: 1rem;
         margin-bottom: 0.2rem;
