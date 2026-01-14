@@ -41,11 +41,6 @@ public class DashboardController {
         return "redirect:/";
     }
 
-    @GetMapping("/placar")
-    public String placar() {
-        return "placar";
-    }
-
     @GetMapping("/regional")
     public String regional() {
         return "dashboard-regional";
